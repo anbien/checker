@@ -5,7 +5,7 @@ To use BDD MDD related algorithms to simplify routing table and ACLs
 
 2016.3.5
 """
-import numpy as np
+#import numpy as np
 
 class BDD(object):
     """Ordered binary decision diagram
