@@ -6,7 +6,6 @@ To use BDD MDD related algorithms to simplify routing table and ACLs
 
 2016.3.5
 """
-#import numpy as np
 import pydot
 
 
@@ -18,9 +17,9 @@ class BDD(object):
     def __init__(self):
         self.nodelist = dict()
         self.nextnode = 0
-        #self.ordering = dict()
-        self.nodenum = 0   #node number!
-        self.varnum = 0    #var number!
+        # self.ordering = dict()
+        self.nodenum = 0   # node number!
+        self.varnum = 0    # var number!
         self.level = 0
         self.false = 0
         self.true = 0
@@ -58,24 +57,24 @@ class BDD(object):
             self.true = 1
         self.nodenum = 2
 
-        #print self.nodelist
-        #print '\n'
+        # print self.nodelist
+        # print '\n'
         self.level = first + 1
         self.nextnode = 2
 
         for bit in s[first + 1:]:
             if bit == 'X':
-                #print '%d th level is void. Switch to next level'%(self.level)
+                # print '%d th level is void. Switch to next level'%(self.level)
                 pass
 
             elif bit == '1':
-                #print '%d th level is %s'%(self.level, '1')
+                # print '%d th level is %s'%(self.level, '1')
                 self.nextnode += 1
                 self.nodenum += 1
                 self.nodelist[self.nextnode - 1] = (self.level, self.false, self.nextnode)
 
             elif bit == '0':
-                #print '%d th level is %s'%(self.level, '0')
+                # print '%d th level is %s'%(self.level, '0')
                 self.nextnode += 1
                 self.nodenum += 1
                 self.nodelist[self.nextnode - 1] = (self.level, self.nextnode, self.false)
@@ -84,8 +83,8 @@ class BDD(object):
                 print 'Invaild initial param'
                 return False
             self.level += 1
-            #print self.nodelist
-            #print '\n'
+            # print self.nodelist
+            # print '\n'
         if self.true == 1:
             self.nodelist[self.nextnode] = (self.level, False, -1)
             self.false = self.nextnode
@@ -131,7 +130,7 @@ class BDD(object):
 
         :param op:
         :param bdd1:
-        :param bbd2:
+        :param bdd2:
         :return: truple
         """
         thisnode = self.nextnode
@@ -220,16 +219,18 @@ class BDD(object):
         #记录每层的节点 nodesOnlevel[i][j] 第i层的第j个节点
         nodesOnLevel = dict()  #record nodes number on the same level
 
-        #唯一性节点,唯一的value与nodesnumber对应
+        #唯一性节点,唯一的value组和nodesnum的对应
         uniquevalue = dict()    #record unique node number  (false, -1) = 1
 
         #每个节点的value值:
         valueofnodes = dict()
 
         #需要被替换的节点
-        nodeswitch = dict()   #replace some node
+        nodeswitch = dict()
 
+        #需要被删除的节点
         deadnode = set()
+
         for i in xrange(self.varnum + 1):
             nodesOnLevel[i] = list()
         for i in xrange(self.nodenum):
@@ -239,43 +240,65 @@ class BDD(object):
         print self.varnum
         print ''
         last = self.varnum
-        nextvalue = 1
-
+        nextvalue = 3
+        falseflag = False
+        trueflag = False
         #对于最后一层,由于不存在子节点相同的情况,所以只加入不重复的就好
         for j in xrange(len(nodesOnLevel[last])):
-            if self.nodelist[nodesOnLevel[last][j]][1:3] in uniquevalue:
-                nodeswitch[nodesOnLevel[last][j]] = uniquevalue[self.nodelist[nodesOnLevel[last][j]][1:3]]
-                deadnode.add(nodesOnLevel[last][j])
-                valueofnodes[nodesOnLevel[last][j]] = uniquevalue[self.nodelist[nodesOnLevel[last][j]][1:3]]
+            if self.nodelist[nodesOnLevel[last][j]][1] is False:
+                valueofnodes[nodesOnLevel[last][j]] = 1
+                if falseflag is False:
+                    falseflag = nodesOnLevel[last][j]
+                    nodeswitch[nodesOnLevel[last][j]] = nodesOnLevel[last][j]
+                    uniquevalue[1] = (1, falseflag)
+                else:
+                    nodeswitch[nodesOnLevel[last][j]] = falseflag
+                    deadnode.add(nodesOnLevel[last][j])
             else:
-                uniquevalue[self.nodelist[nodesOnLevel[last][j]][1:3]] = nodesOnLevel[last][j]
-                nodeswitch[nodesOnLevel[last][j]] = nodesOnLevel[last][j]
-                valueofnodes[nodesOnLevel[last][j]] = nextvalue
-                nextvalue += 1
+                valueofnodes[nodesOnLevel[last][j]] = 2
+                if trueflag is False:
+                    trueflag = nodesOnLevel[last][j]
+                    nodeswitch[nodesOnLevel[last][j]] = nodesOnLevel[last][j]
+                    uniquevalue[2] = (2, trueflag)
+                else:
+                    nodeswitch[nodesOnLevel[last][j]] = trueflag
+                    deadnode.add(nodesOnLevel[last][j])
 
         print 'After first level:'
         print uniquevalue
         print valueofnodes
+        print nodeswitch
         print ''
 
         for i in xrange(self.varnum - 1, -1, -1):  #for each level except the lowest level:
             print 'Level %d;'%i
             for j in xrange(len(nodesOnLevel[i])):  #for each node on this level:
-                print 'Identifying node %d'%nodesOnLevel[i][j]
-                print self.nodelist[nodesOnLevel[i][j]]
-                if (valueofnodes[self.nodelist[nodesOnLevel[i][j]][1]] ==
-                        valueofnodes[self.nodelist[nodesOnLevel[i][j]][2]]):
-                    valueofnodes[nodesOnLevel[i][j]] = valueofnodes[self.nodelist[nodesOnLevel[i][j]][2]]
-                    nodeswitch[nodesOnLevel[i][j]] = nodeswitch[self.nodelist[nodesOnLevel[i][j]][2]]
-                    deadnode.add(nodesOnLevel[i][j])
+                nodenum = nodesOnLevel[i][j]
+                print 'Identifying node %d'%nodenum
+                print self.nodelist[nodenum]
+                if (valueofnodes[self.nodelist[nodenum][1]] ==
+                        valueofnodes[self.nodelist[nodenum][2]]):
+                    print "Two child of this node have same value, so this node's value is:"
+                    valueofnodes[nodenum] = valueofnodes[self.nodelist[nodenum][2]]
+                    print valueofnodes[nodenum]
+                    nodeswitch[nodenum] = nodeswitch[self.nodelist[nodenum][2]]
+                    deadnode.add(nodenum)
+
                 else:
-                    valueofnodes[nodesOnLevel[i][j]] = (valueofnodes[self.nodelist[nodesOnLevel[i][j]][1]],
-                                                        valueofnodes[self.nodelist[nodesOnLevel[i][j]][2]])
-                    if valueofnodes[nodesOnLevel[i][j]] in uniquevalue:
-                        nodeswitch[nodesOnLevel[i][j]] = uniquevalue[valueofnodes[nodesOnLevel[i][j]]]
-                        deadnode.add(nodesOnLevel[i][j])
+                    valueofnodes[nodenum] = \
+                        (uniquevalue[valueofnodes[self.nodelist[nodenum][1]]][0],
+                         uniquevalue[valueofnodes[self.nodelist[nodenum][2]]][0])
+                    print "Two child have different value, so new value is:"
+                    print valueofnodes[nodenum]
+                    if valueofnodes[nodenum] in uniquevalue:
+                        print "There is already some nodes with this value:"
+                        nodeswitch[nodenum] = uniquevalue[valueofnodes[nodenum]]
+                        deadnode.add(nodenum)
                     else:
-                        uniquevalue[valueofnodes[nodesOnLevel[i][j]]] = nodesOnLevel[i][j]
+                        print "New value, with number %d"%nextvalue
+                        uniquevalue[valueofnodes[nodenum]] = (nextvalue, nodenum)
+                        nodeswitch[nodenum] = nodenum
+                        nextvalue += 1
 
         print 'nodes on level:'
         print nodesOnLevel
@@ -286,31 +309,38 @@ class BDD(object):
         print 'dead nodes:'
         print deadnode
         print ''
-        count = 0
-        for i in xrange(self.nodenum):
-            if i in deadnode:
-                pass
-            else:
-                nodeswitch[i] = count
-                count += 1
 
-        #重新生成节点
-        newnodelist = self.nodelist.copy()
-        for i in xrange(self.nodenum):
-            if self.nodelist[i][2] != -1:
-                newnodelist[i] = (self.nodelist[i][0], nodeswitch[self.nodelist[i][1]], nodeswitch[self.nodelist[i][2]])
-        print newnodelist
         for i in deadnode:
-            newnodelist.pop(i)
-        print newnodelist
-        self.nodenum = len(newnodelist)
-        self.nodelist.clear()
-        print newnodelist
-        count = 0
-        for i in newnodelist.values():
-            self.nodelist[count] = i
-            count += 1
+            self.nodelist.pop(i)
+        print 'After cut, node list is:'
         print self.nodelist
+
+        for i in self.nodelist:
+            if self.nodelist[i][2] != -1:
+                self.nodelist[i] = (self.nodelist[i][0], nodeswitch[self.nodelist[i][1]],
+                                    nodeswitch[self.nodelist[i][2]])
+
+        print 'After switch, node list is:'
+        print self.nodelist
+
+        nodeswitch.clear()
+        count = 0
+        for i in self.nodelist:
+            nodeswitch[i] = count
+            count += 1
+        count = 0
+        newnodelist = self.nodelist.copy()
+        self.nodelist.clear()
+        for i in newnodelist:
+            if newnodelist[i][2] != -1:
+                self.nodelist[count] = (newnodelist[i][0], nodeswitch[newnodelist[i][1]],
+                                    nodeswitch[newnodelist[i][2]])
+            else:
+                self.nodelist[count] = newnodelist[i]
+            count += 1
+        print 'Final node list:'
+        print self.nodelist
+        self.nodenum = len(self.nodelist)
 
     def dump(self, filename, filetype = None, **kw):
         """
@@ -347,18 +377,49 @@ class BDD(object):
         :param kw:
         :return:
         """
-        print self.nodenum
-        print filename
-        print filetype
-
-        graph = pydot.Dot(graph_type = 'digraph')
-        for i in xrange(self.nodenum):
-            node = pydot.Node(str(i))
-            graph.add_node(node)
+        graph = pydot.Dot(graph_type='digraph')
+        subgraph = dict()
+        skeleton = list()
+        for i in xrange(self.varnum + 1):
+            h = pydot.Subgraph('', rank='same')
+            graph.add_subgraph(h)
+            subgraph[i] = h
+            u = '-{i}'.format(i=i)
+            skeleton.append(u)
+            nd = pydot.Node(name=u, label='level' + str(i), shape='none')
+            h.add_node(nd)
+        for i, u in enumerate(skeleton[:-1]):
+            v = skeleton[i + 1]
+            e = pydot.Edge(str(u), str(v), style='invis')
+            graph.add_edge(e)
         for i in xrange(self.nodenum):
             if self.nodelist[i][2] != -1:
-                graph.add_edge(pydot.Edge(str(i), str(self.nodelist[i][1])))
-                graph.add_edge(pydot.Edge(str(i), str(self.nodelist[i][2])))
+                node = pydot.Node(str(i))
+            else:
+                if self.nodelist[i][1] is False:
+                    node = pydot.Node("False")
+                else:
+                    node = pydot.Node("True")
+            graph.add_node(node)
+            h = subgraph[self.nodelist[i][0]]
+            h.add_node(node)
+
+        for i in xrange(self.nodenum):
+            if self.nodelist[i][2] != -1:
+                if self.nodelist[self.nodelist[i][1]][2] == -1:
+                    edge = pydot.Edge(str(i), str(self.nodelist[self.nodelist[i][1]][1]),
+                                      label="0", style='dashed')
+                else:
+                    edge = pydot.Edge(str(i), str(self.nodelist[i][1]),
+                                      label="0", style='dashed')
+                graph.add_edge(edge)
+                if self.nodelist[self.nodelist[i][2]][2] == -1:
+                    edge = pydot.Edge(str(i), str(self.nodelist[self.nodelist[i][2]][1]),
+                                      label="1", style='solid')
+                else:
+                    edge = pydot.Edge(str(i), str(self.nodelist[i][2]),
+                                      label="1", style='solid')
+                graph.add_edge(edge)
         graph.write_pdf('bdd.pdf')
 
 
@@ -366,8 +427,8 @@ bdd1 = BDD()
 bdd2 = BDD()
 bdd = BDD()
 
-bdd1.construct('11101')
-bdd2.construct('11111')
+bdd1.construct('1110')
+bdd2.construct('1111')
 
 bdd.apply('|', bdd1, bdd2)
 bdd.reduce()
