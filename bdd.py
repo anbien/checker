@@ -282,13 +282,24 @@ class BDD(object):
                     print valueofnodes[nodenum]
                     if valueofnodes[nodenum] in uniquevalue:
                         print "There is already some nodes with this value:"
-                        nodeswitch[nodenum] = uniquevalue[valueofnodes[nodenum]]
+                        print uniquevalue[valueofnodes[nodenum]]
+                        # if len(uniquevalue[valueofnodes[nodenum]] == 2):
+                        #     nodeswitch[nodenum] = uniquevalue[valueofnodes[nodenum]][0]
+                        # else:
+                        nodeswitch[nodenum] = uniquevalue[valueofnodes[nodenum]][1]
                         deadnode.add(nodenum)
                     else:
                         print "New value, with number %d" % nextvalue
                         uniquevalue[valueofnodes[nodenum]] = (nextvalue, nodenum)
                         nodeswitch[nodenum] = nodenum
                         nextvalue += 1
+                print 'Now uniquevalue:'
+                print uniquevalue
+                print 'Value of nodes:'
+                print valueofnodes
+                print 'Node switch:'
+                print nodeswitch
+                print ''
 
         print 'nodes on level:'
         print nodeonlevel

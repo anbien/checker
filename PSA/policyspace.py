@@ -10,6 +10,7 @@
 
 from copy import deepcopy
 from operator import mul
+# operator提供了一套C实现的加减乘除;
 from itertools import chain
 
 
@@ -86,11 +87,12 @@ class HyperRect(object):
             return result
 
     @property
-    def volume(self):
+    def volume(self):  # 求体积
         return reduce(mul, (d[1] - d[0] + 1 for d in self.dims))
+        # 就是连乘...
 
     @classmethod
-    def clip(cls, clipped, clipping, inplace):
+    def clip(cls, clipped, clipping, inplace):  # 暂时不知道这是干嘛的...
         result = []
         if not inplace: clipped = deepcopy(clipped)
         for i in range(len(clipped)):
@@ -147,7 +149,8 @@ class PolicySpace(object):
         result = PolicySpace(rects)
         for vr in value.rects[1:]:
             result.sub_rect(vr)
-            if not result.rects: return None
+            if not result.rects:
+                return None
         return result
 
     # union
