@@ -4,9 +4,6 @@ Created by lichee
 
 """
 import bdd
-from config_parser import cisco_router_parser
-
-h = cisco_router_parser.cisco_router(1)
 # test of BDD
 bdd1 = bdd.BDD()
 bdd2 = bdd.BDD()
