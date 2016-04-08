@@ -10,11 +10,9 @@ Replaced bytearray with wildcard on Jul 9,2012
 
 @author: Peyman Kazemian
 '''
-import sys
-sys.path.append("..")
 from operator import xor
-from utils.wildcard import *
-from utils.wildcard_utils import *
+from ..utils.wildcard import *
+from ..utils.wildcard_utils import *
 from copy import deepcopy
 
 class headerspace(object):

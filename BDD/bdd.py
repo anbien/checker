@@ -426,3 +426,19 @@ class BDD(object):
             graph.write_pdf(filename)
         else:
             graph.write_png(filename)
+
+
+if __name__ == "__main__":
+
+    # test of BDD
+    bdd1 = BDD()
+    bdd2 = BDD()
+    bdd3 = BDD()
+
+    bdd1.construct('1111X101')
+    bdd2.construct('11X1X111')
+    bdd3.apply('|', bdd1, bdd2)
+    bdd3.reduce()
+    bdd3.dump('bdd3.png')
+    bdd2.dump('bdd2.png')
+    bdd1.dump('bdd1.png')

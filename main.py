@@ -3,16 +3,23 @@ Created by lichee
 
 
 """
-import bdd
-# test of BDD
-bdd1 = bdd.BDD()
-bdd2 = bdd.BDD()
-bdd3 = bdd.BDD()
+from BDD import bdd_rule
+from HSA.headerspace.tf import *
+from HSA.parser.cisco_router_parser import cisco_router
 
-bdd1.construct('1111X101')
-bdd2.construct('11X1X111')
-bdd3.apply('|', bdd1, bdd2)
-bdd3.reduce()
-bdd3.dump('bdd3.png')
-bdd2.dump('bdd2.png')
-bdd1.dump('bdd1.png')
+
+cs = cisco_router(1)
+L = cs.hs_format["length"]
+tf = TF(L)
+tf.set_prefix_id("yozb_rtr")
+cs.read_arp_table_file("./data/Stanford_backbone/yozb_rtr_arp_table.txt")
+cs.read_mac_table_file("./data/Stanford_backbone/yozb_rtr_mac_table.txt")
+cs.read_config_file("./data/Stanford_backbone/yozb_rtr_config.txt")
+cs.read_spanning_tree_file("./data/Stanford_backbone/yozb_rtr_spanning_tree.txt")
+cs.read_route_file("./data/Stanford_backbone/yozb_rtr_route.txt")
+cs.optimize_forwarding_table()
+cs.generate_port_ids([])
+cs.generate_transfer_function(tf)
+tf.show_tf_in_file("show.txt")
+tf.write_bdd_rule("bdd_rule.txt")
+bddrules = bdd_rule.constructbddrules("bdd_rule.txt")

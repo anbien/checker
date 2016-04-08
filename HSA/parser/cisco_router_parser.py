@@ -9,14 +9,11 @@ Created on May 11, 2011
 @author: Peyman Kazemian
 @author: James Hongyi Zeng
 '''
-import sys
-sys.path.append("..")
 
-from utils.helper import *
-from headerspace.tf import *
-from headerspace.hs import *
-from utils.wildcard import *
-from utils.wildcard_utils import set_header_field,wc_header_to_parsed_string
+from ..utils.helper import *
+from ..headerspace.tf import *
+from ..utils.wildcard import *
+from ..utils.wildcard_utils import set_header_field,wc_header_to_parsed_string
 import re
 
 class cisco_router(object):
@@ -920,7 +917,7 @@ class cisco_router(object):
                                                    None, None, "", [])
                 tf.add_fwd_rule(def_rule)
 
-        #defult rule for unvaln-tagged packets received on an trunk port
+        #defult rule for unvlan-tagged packets received on an trunk port
         if self.def_vlan in self.configed_vlans.keys():
             for port in self.port_to_id.keys():
                 if port != "self" and port not in all_access_ports:

@@ -8,12 +8,10 @@ Created on Jun 1, 2011
 
 @author: Peyman Kazemian
 '''
-import sys
-sys.path.append("..")
 import re
 from math import pow
-from headerspace.hs import *
-from headerspace.tf import TF
+from ..headerspace.hs import *
+from ..headerspace.tf import TF
     
 def is_ip_address(str):
     ips = re.match('(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})', str)

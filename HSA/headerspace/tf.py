@@ -9,11 +9,10 @@ Major clean up on Jul 10, 2012
 @author: Peyman Kazemian
 '''
 
-from hs import *
-from utils.wildcard import *
+from ..utils.wildcard import *
 from array import array
-from utils.wildcard_dictionary import *
-from utils.hs_hash_table import hs_hash_table
+from ..utils.wildcard_dictionary import *
+from ..utils.hs_hash_table import hs_hash_table
 import json
 
 class TF(object):
@@ -825,8 +824,8 @@ class TF(object):
             for ra in rule["affected_by"]:
                 f.write("")
                 f.write("%d; %s; %s\n"%(self.rules.index(ra[0]),\
-                                     wildcard_to_str(ra[1]),\
-                                     ra[2]))
+                                 wildcard_to_str(ra[1]),\
+                                 ra[2]))
             #f.write("$")
             f.write("#\n")
             f.write("Influence on:\n")
@@ -850,11 +849,18 @@ class TF(object):
         :return:
         '''
         f = open(file, 'w')
+        # count = 0
         for rule in self.rules:
+            # count = count + 1
+            # f.write("%d\n"%count)
+            # f.write("%s\n"%wildcard_to_str(rule["mask"]))
+            # f.write("%s\n"%wildcard_to_str(rule["rewrite"]))
+            # f.write("%s\n"%wildcard_to_str(rule["inverse_match"]))
+            # f.write("%s\n"%wildcard_to_str(rule["inverse_rewrite"]))
             f.write("New rule:\n")
-            f.write("Action %s\n"%rule["action"])
-            f.write("Inport %s\n"%rule["in_ports"])
-            f.write("Outport %s\n"%rule["out_ports"])
+            f.write("Action %s\n" % rule["action"])
+            f.write("Inport %s\n" % rule["in_ports"])
+            f.write("Outport %s\n" % rule["out_ports"])
             f.write("Match %s\n"%wildcard_to_str(rule["match"]))
         f.close()
 
