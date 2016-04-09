@@ -36,6 +36,7 @@ class BDD(object):
         :return:
         """
         self.varnum = s.__len__()
+        self.nodelist.clear()
         first = -1
         for bit in s:
             if bit != 'X':
@@ -114,9 +115,158 @@ class BDD(object):
         :return:
         """
         self.varnum = bdd1.varnum
-        self.__apply(op, bdd1, bdd2, 0, 0)
+        self.__apply_rec(op, bdd1, bdd2, 0, 0)
 
-    def __apply(self, op, bdd1, bdd2, n1, n2):
+    def apply_ite(self, op, bdd1, bdd2):
+        """
+        do the apply in iterative way
+        :param op:
+        :param bdd1:
+        :param bdd2:
+        :return:
+        """
+        result_bdd = BDD()
+        result_bdd.varnum = bdd1.varnum
+        result_bdd.nextnode = 0
+        stack = list()
+        stack.append({(0, 0):(0, 0)})
+        while stack:
+            nownode = stack.pop()
+            index = nownode.keys()[0]
+            state = nownode.values()[0][0]
+            num = nownode.values()[0][1]
+            bdd1node = bdd1.nodelist[index[0]]
+            bdd2node = bdd2.nodelist[index[1]]
+            if state == 0:
+                if bdd1node[0] == bdd2node[0]:
+                    if bdd1node[2] == -1:  # bottom node
+                        result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum,
+                                                                    self.__op(op, bdd1node[1], bdd2node[1]),
+                                                                    -1)
+                        result_bdd.nextnode += 1
+                        # state = 2
+                        # stack.append({index: (state, num)})
+                    else:  # not bottom node
+                        result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
+                                                                    result_bdd.nextnode + 1, -1)
+                        result_bdd.nextnode += 1
+                        state = 1
+                        stack.append({index: (state, num)})
+                        stack.append({(bdd1node[1], bdd2node[1]): (0, result_bdd.nextnode)})
+                elif bdd1node[0] > bdd2node[0]:
+                    result_bdd.nodelist[result_bdd.nextnode] = (bdd2node[0],
+                                                                result_bdd.nextnode + 1, -1)
+                    result_bdd.nextnode += 1
+                    if bdd1node[2] == -1:
+                        if not bdd1node[1]:
+                            if op in ('&', 'and'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, False, -1)
+                                result_bdd.nextnode += 1
+                                state = 2
+                                stack.append({index: (state, num)})
+                            else:
+                                state = 1
+                                stack.append({index: (state, num)})
+                                stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
+                        else:
+                            if op in ('|', 'or'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, True, -1)
+                                result_bdd.nextnode += 1
+                                state = 2
+                                stack.append({index: (state, num)})
+                            else:
+                                state = 1
+                                stack.append({index: (state, num)})
+                                stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
+                    else:
+                        state = 1
+                        stack.append({index: (state, num)})
+                        stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
+
+                else:  # bdd1node[0] < bdd2node[0]
+                    result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
+                                                                result_bdd.nextnode + 1, -1)
+                    result_bdd.nextnode += 1
+                    if bdd2node[2] == -1:
+                        if not bdd2node[1]:
+                            if op in ('&', 'and'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, False, -1)
+                                result_bdd.nextnode += 1
+                                state = 2
+                                stack.append({index: (state, num)})
+                            else:
+                                state = 1
+                                stack.append({index: state})
+                                stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
+                        else:
+                            if op in ('|', 'or'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, True, -1)
+                                result_bdd.nextnode += 1
+                                state = 2
+                                stack.append({index: (state, num)})
+                            else:
+                                state = 1
+                                stack.append({index: (state, num)})
+                                stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
+                    else:
+                        state = 1
+                        stack.append({index: (state, num)})
+                        stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
+            elif state == 1:
+                result_bdd.nodelist[num] = (result_bdd.nodelist[num][0],
+                                            result_bdd.nodelist[num][1],
+                                            result_bdd.nextnode)
+                if bdd1node[0] == bdd2node[0]:
+                    state = 2
+                    stack.append({index: (state, num)})
+                    stack.append({(bdd1node[2], bdd2node[2]): (0, result_bdd.nextnode)})
+                elif bdd1node[0] > bdd2node[0]:
+                    if bdd1node[2] == -1:
+                        if not bdd1node[1]:
+                            if op in ('&', 'and'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, False, -1)
+                            else:
+                                state = 2
+                                stack.append({index: (state, num)})
+                                stack.append({(index[0], bdd2node[2]): (0, result_bdd.nextnode)})
+                        else:
+                            if op in ('|', 'or'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, True, -1)
+                            else:
+                                state = 2
+                                stack.append({index: (state, num)})
+                                stack.append({(index[0], bdd2node[2]): (0, result_bdd.nextnode)})
+                    else:
+                        state = 2
+                        stack.append({index: (state, num)})
+                        stack.append({(index[0], bdd2node[2]): (0, result_bdd.nextnode)})
+                else:  # bdd1node[0] < bdd2node[0]
+                    if bdd2node[2] == -1:
+                        if not bdd2node[1]:
+                            if op in ('&', 'and'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, False, -1)
+                            else:
+                                state = 2
+                                stack.append({index: (state, num)})
+                                stack.append({(bdd1node[2], index[1]): (0, result_bdd.nextnode)})
+                        else:
+                            if op in ('|', 'or'):
+                                result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, True, -1)
+                            else:
+                                state = 2
+                                stack.append({index: (state, num)})
+                                stack.append({(bdd1node[2], index[1]): (0, result_bdd.nextnode)})
+                    else:
+                        state = 2
+                        stack.append({index: (state, num)})
+                        stack.append({(bdd1node[2], index[1]): (0, result_bdd.nextnode)})
+            else: # nownode.values() == 2:
+                pass
+        result_bdd.nodenum = result_bdd.nextnode
+        return result_bdd
+
+
+    def __apply_rec(self, op, bdd1, bdd2, n1, n2):
         """
 
         :param op:
@@ -141,8 +291,8 @@ class BDD(object):
                                            -1)
             else:
                 self.nodelist[thisnode] = (bdd1node[0],
-                                           self.__apply(op, bdd1, bdd2, bdd1node[1], bdd2node[1]),
-                                           self.__apply(op, bdd1, bdd2, bdd1node[2], bdd2node[2]))
+                                           self.__apply_rec(op, bdd1, bdd2, bdd1node[1], bdd2node[1]),
+                                           self.__apply_rec(op, bdd1, bdd2, bdd1node[2], bdd2node[2]))
         elif bdd1node[0] > bdd2node[0]:
             # print 'Different level, 2 higher than 1;'
             if bdd1node[2] == -1:
@@ -153,8 +303,8 @@ class BDD(object):
                     else:  # suppose we never use xor
                         # print 'copy the rest of bdd2;'
                         self.nodelist[thisnode] = (bdd2node[0],
-                                           self.__apply(op, bdd1, bdd2, n1, bdd2node[1]),
-                                           self.__apply(op, bdd1, bdd2, n1, bdd2node[2]))
+                                           self.__apply_rec(op, bdd1, bdd2, n1, bdd2node[1]),
+                                           self.__apply_rec(op, bdd1, bdd2, n1, bdd2node[2]))
                     # TODO:still need to implement xor
 
                 else:  # bdd2's node is true
@@ -165,13 +315,13 @@ class BDD(object):
                         # print 'copy the rest of bdd2'
                         # TODO: FIND A SMARTER WAY TO DO THE COPY
                         self.nodelist[thisnode] = (bdd2node[0],
-                                           self.__apply(op, bdd1, bdd2, n1, bdd2node[1]),
-                                           self.__apply(op, bdd1, bdd2, n1, bdd2node[2]))
+                                           self.__apply_rec(op, bdd1, bdd2, n1, bdd2node[1]),
+                                           self.__apply_rec(op, bdd1, bdd2, n1, bdd2node[2]))
 
             else:
                 self.nodelist[thisnode] = (bdd2node[0],
-                                           self.__apply(op, bdd1, bdd2, n1, bdd2node[1]),
-                                           self.__apply(op, bdd1, bdd2, n1, bdd2node[2]))
+                                           self.__apply_rec(op, bdd1, bdd2, n1, bdd2node[1]),
+                                           self.__apply_rec(op, bdd1, bdd2, n1, bdd2node[2]))
         else:
             if bdd2node[2] == -1:
                 if not bdd2node[1]:  # bdd2's node is false
@@ -179,8 +329,8 @@ class BDD(object):
                         self.nodelist[thisnode] = (self.varnum, False, -1)
                     else:  # suppose we never use xor
                         self.nodelist[thisnode] = (bdd1node[0],
-                                                   self.__apply(op, bdd1, bdd2, bdd1node[1], n2),
-                                                   self.__apply(op, bdd1, bdd2, bdd1node[2], n2))
+                                                   self.__apply_rec(op, bdd1, bdd2, bdd1node[1], n2),
+                                                   self.__apply_rec(op, bdd1, bdd2, bdd1node[2], n2))
                     # TODO:still need to implement xor
 
                 else:  # bdd2's node is true
@@ -188,14 +338,14 @@ class BDD(object):
                         self.nodelist[thisnode] = (self.varnum, True, -1)
                     else:  # suppose we never use xor
                         self.nodelist[thisnode] = (bdd1node[0],
-                                                   self.__apply(op, bdd1, bdd2, bdd1node[1], n2),
-                                                   self.__apply(op, bdd1, bdd2, bdd1node[2], n2))
+                                                   self.__apply_rec(op, bdd1, bdd2, bdd1node[1], n2),
+                                                   self.__apply_rec(op, bdd1, bdd2, bdd1node[2], n2))
                     # TODO:still need to implement xor
 
             else:
                 self.nodelist[thisnode] = (bdd1node[0],
-                                           self.__apply(op, bdd1, bdd2, bdd1node[1], n2),
-                                           self.__apply(op, bdd1, bdd2, bdd1node[2], n2))
+                                           self.__apply_rec(op, bdd1, bdd2, bdd1node[1], n2),
+                                           self.__apply_rec(op, bdd1, bdd2, bdd1node[2], n2))
 
         self.nodenum = self.nextnode
         return thisnode
@@ -435,10 +585,13 @@ if __name__ == "__main__":
     bdd2 = BDD()
     bdd3 = BDD()
 
-    bdd1.construct('1111X101')
-    bdd2.construct('11X1X111')
-    bdd3.apply('|', bdd1, bdd2)
-    bdd3.reduce()
-    bdd3.dump('bdd3.png')
+    bdd1.construct('1111X')
+    bdd2.construct('11X0X')
     bdd2.dump('bdd2.png')
     bdd1.dump('bdd1.png')
+    bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
+    bdd4 = BDD()
+    bdd4.apply('|', bdd1, bdd2)
+    bdd3.reduce()
+    bdd4.reduce()
+    print '...'

@@ -44,7 +44,7 @@ def constructbddrules(file):
             match = tokens[1].replace(',', '')
             if newfwdrule:
                 if (inport, outport) not in bddrules.keys():
-                    bddrules[(inport, outport)] = set()
-                bddrules[(inport, outport)].add(match)
+                    bddrules[(inport, outport)] = list()
+                bddrules[(inport, outport)].append(match.upper())
     return bddrules
 
