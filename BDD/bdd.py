@@ -7,6 +7,7 @@ To use BDD MDD related algorithms to simplify routing table and ACLs
 2016.3.5
 """
 import pydot
+import time
 
 
 class BDD(object):
@@ -16,6 +17,15 @@ class BDD(object):
 
     def __init__(self):
         self.nodelist = dict()
+        self.nextnode = 0
+        self.nodenum = 0   # node number!
+        self.varnum = 0    # var number!
+        self.level = 0
+        self.false = 0
+        self.true = 0
+
+    def __clear(self):
+        self.nodelist.clear()
         self.nextnode = 0
         self.nodenum = 0   # node number!
         self.varnum = 0    # var number!
@@ -35,8 +45,8 @@ class BDD(object):
         :param s:  '00X00101'
         :return:
         """
+        self.__clear()
         self.varnum = s.__len__()
-        self.nodelist.clear()
         first = -1
         for bit in s:
             if bit != 'X':
@@ -50,8 +60,8 @@ class BDD(object):
             self.false = 1
         else:
             self.nodelist[0] = (first, 2, 1)
-            self.nodelist[1] = (self.varnum, True, -1)
-            self.true = 1
+            self.nodelist[1] = (self.varnum, False, -1)
+            self.false = 1
         self.nodenum = 2
 
         self.level = first + 1
@@ -129,8 +139,11 @@ class BDD(object):
         result_bdd.varnum = bdd1.varnum
         result_bdd.nextnode = 0
         stack = list()
+        count = 0
         stack.append({(0, 0):(0, 0)})
         while stack:
+            # print count
+            count += 1
             nownode = stack.pop()
             index = nownode.keys()[0]
             state = nownode.values()[0][0]
@@ -138,43 +151,48 @@ class BDD(object):
             bdd1node = bdd1.nodelist[index[0]]
             bdd2node = bdd2.nodelist[index[1]]
             if state == 0:
-                if bdd1node[0] == bdd2node[0]:
+                if bdd1node[0] == bdd2node[0]:  # same level
                     if bdd1node[2] == -1:  # bottom node
                         result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum,
                                                                     self.__op(op, bdd1node[1], bdd2node[1]),
                                                                     -1)
                         result_bdd.nextnode += 1
-                        # state = 2
-                        # stack.append({index: (state, num)})
-                    else:  # not bottom node
+                        # no child, no need to push back to the stack
+
+                    else:  # not bottom node, have child
                         result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
                                                                     result_bdd.nextnode + 1, -1)
                         result_bdd.nextnode += 1
                         state = 1
                         stack.append({index: (state, num)})
                         stack.append({(bdd1node[1], bdd2node[1]): (0, result_bdd.nextnode)})
-                elif bdd1node[0] > bdd2node[0]:
-                    result_bdd.nodelist[result_bdd.nextnode] = (bdd2node[0],
-                                                                result_bdd.nextnode + 1, -1)
-                    result_bdd.nextnode += 1
-                    if bdd1node[2] == -1:
-                        if not bdd1node[1]:
+                elif bdd1node[0] > bdd2node[0]:  # node from bdd1 is lower than bdd2, dig deeper in bdd2
+                    if bdd1node[2] == -1:  # bottom node, need to see if we can be lazy
+                        if not bdd1node[1]:  # bottom node is False, lazy if in the case of '&'
                             if op in ('&', 'and'):
                                 result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, False, -1)
                                 result_bdd.nextnode += 1
-                                state = 2
-                                stack.append({index: (state, num)})
+                                # no child, no need to push back
+                                # state = 2
+                                # stack.append({index: (state, num)})
                             else:
+                                result_bdd.nodelist[result_bdd.nextnode] = (bdd2node[0],
+                                                                            result_bdd.nextnode + 1, -1)
+                                result_bdd.nextnode += 1
                                 state = 1
                                 stack.append({index: (state, num)})
                                 stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
-                        else:
+                        else:  # bottom node is True, lazy if in the case of '|'
                             if op in ('|', 'or'):
                                 result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, True, -1)
                                 result_bdd.nextnode += 1
-                                state = 2
-                                stack.append({index: (state, num)})
+                                # no child, no need to push back
+                                # state = 2
+                                # stack.append({index: (state, num)})
                             else:
+                                result_bdd.nodelist[result_bdd.nextnode] = (bdd2node[0],
+                                                                            result_bdd.nextnode + 1, -1)
+                                result_bdd.nextnode += 1
                                 state = 1
                                 stack.append({index: (state, num)})
                                 stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
@@ -183,28 +201,32 @@ class BDD(object):
                         stack.append({index: (state, num)})
                         stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
 
-                else:  # bdd1node[0] < bdd2node[0]
-                    result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
-                                                                result_bdd.nextnode + 1, -1)
-                    result_bdd.nextnode += 1
+                else:  # bdd1node[0] < bdd2node[0], bdd2 node is deeper than bdd1
                     if bdd2node[2] == -1:
                         if not bdd2node[1]:
                             if op in ('&', 'and'):
                                 result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, False, -1)
                                 result_bdd.nextnode += 1
-                                state = 2
-                                stack.append({index: (state, num)})
+                                # no child, be poped out!
+                                # state = 2
+                                # stack.append({index: (state, num)})
                             else:
+                                result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
+                                                                            result_bdd.nextnode + 1, -1)
+                                result_bdd.nextnode += 1
                                 state = 1
-                                stack.append({index: state})
+                                stack.append({index: (state, num)})
                                 stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
                         else:
                             if op in ('|', 'or'):
                                 result_bdd.nodelist[result_bdd.nextnode] = (result_bdd.varnum, True, -1)
                                 result_bdd.nextnode += 1
-                                state = 2
-                                stack.append({index: (state, num)})
+                                # state = 2
+                                # stack.append({index: (state, num)})
                             else:
+                                result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
+                                                                            result_bdd.nextnode + 1, -1)
+                                result_bdd.nextnode += 1
                                 state = 1
                                 stack.append({index: (state, num)})
                                 stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
@@ -262,6 +284,7 @@ class BDD(object):
                         stack.append({(bdd1node[2], index[1]): (0, result_bdd.nextnode)})
             else: # nownode.values() == 2:
                 pass
+        print "Ite count :%d;" % count
         result_bdd.nodenum = result_bdd.nextnode
         return result_bdd
 
@@ -355,7 +378,7 @@ class BDD(object):
 
         :return:
         """
-        print 'Total %d nodes before reduce, they are:' % self.nodenum
+        print 'Total %d nodes before reduce;' % self.nodenum
         # 记录每层的节点 nodeonlevel[i][j] 第i层的第j个节点
         nodeonlevel = dict()  # record nodes number on the same level
 
@@ -376,9 +399,9 @@ class BDD(object):
         for i in xrange(self.nodenum):
             nodeonlevel[self.nodelist[i][0]].append(i)
 
-        print self.nodelist
-        print self.varnum
-        print ''
+        # print self.nodelist
+        # print self.varnum
+        # print ''
         last = self.varnum
         nextvalue = 3
         falseflag = False
@@ -404,23 +427,23 @@ class BDD(object):
                     nodeswitch[nodeonlevel[last][j]] = trueflag
                     deadnode.add(nodeonlevel[last][j])
 
-        print 'After first level:'
-        print uniquevalue
-        print valueofnodes
-        print nodeswitch
-        print ''
+        # print 'After first level:'
+        # print uniquevalue
+        # print valueofnodes
+        # print nodeswitch
+        # print ''
 
         for i in xrange(self.varnum - 1, -1, -1):  # for each level except the lowest level:
-            print 'Level %d;' % i
+            # print 'Level %d;' % i
             for j in xrange(len(nodeonlevel[i])):  # for each node on this level:
                 nodenum = nodeonlevel[i][j]
-                print 'Identifying node %d' % nodenum
-                print self.nodelist[nodenum]
+                # print 'Identifying node %d' % nodenum
+                # print self.nodelist[nodenum]
                 if (valueofnodes[self.nodelist[nodenum][1]] ==
                         valueofnodes[self.nodelist[nodenum][2]]):
-                    print "Two child of this node have same value, so this node's value is:"
+                    # print "Two child of this node have same value, so this node's value is:"
                     valueofnodes[nodenum] = valueofnodes[self.nodelist[nodenum][2]]
-                    print valueofnodes[nodenum]
+                    # print valueofnodes[nodenum]
                     nodeswitch[nodenum] = nodeswitch[self.nodelist[nodenum][2]]
                     deadnode.add(nodenum)
 
@@ -428,51 +451,51 @@ class BDD(object):
                     valueofnodes[nodenum] = \
                         (uniquevalue[valueofnodes[self.nodelist[nodenum][1]]][0],
                          uniquevalue[valueofnodes[self.nodelist[nodenum][2]]][0])
-                    print "Two child have different value, so new value is:"
-                    print valueofnodes[nodenum]
+                    # print "Two child have different value, so new value is:"
+                    # print valueofnodes[nodenum]
                     if valueofnodes[nodenum] in uniquevalue:
-                        print "There is already some nodes with this value:"
-                        print uniquevalue[valueofnodes[nodenum]]
+                        # print "There is already some nodes with this value:"
+                        # print uniquevalue[valueofnodes[nodenum]]
                         # if len(uniquevalue[valueofnodes[nodenum]] == 2):
                         #     nodeswitch[nodenum] = uniquevalue[valueofnodes[nodenum]][0]
                         # else:
                         nodeswitch[nodenum] = uniquevalue[valueofnodes[nodenum]][1]
                         deadnode.add(nodenum)
                     else:
-                        print "New value, with number %d" % nextvalue
+                        # print "New value, with number %d" % nextvalue
                         uniquevalue[valueofnodes[nodenum]] = (nextvalue, nodenum)
                         nodeswitch[nodenum] = nodenum
                         nextvalue += 1
-                print 'Now uniquevalue:'
-                print uniquevalue
-                print 'Value of nodes:'
-                print valueofnodes
-                print 'Node switch:'
-                print nodeswitch
-                print ''
-
-        print 'nodes on level:'
-        print nodeonlevel
-        print 'num of nodes:'
-        print uniquevalue
-        print 'node list after reduce:'
-        print nodeswitch
-        print 'dead nodes:'
-        print deadnode
-        print ''
+        #         print 'Now uniquevalue:'
+        #         print uniquevalue
+        #         print 'Value of nodes:'
+        #         print valueofnodes
+        #         print 'Node switch:'
+        #         print nodeswitch
+        #         print ''
+        #
+        # print 'nodes on level:'
+        # print nodeonlevel
+        # print 'num of nodes:'
+        # print uniquevalue
+        # print 'node list after reduce:'
+        # print nodeswitch
+        # print 'dead nodes:'
+        # print deadnode
+        # print ''
 
         for i in deadnode:
             self.nodelist.pop(i)
-        print 'After cut, node list is:'
-        print self.nodelist
+        # print 'After cut, node list is:'
+        # print self.nodelist
 
         for i in self.nodelist:
             if self.nodelist[i][2] != -1:
                 self.nodelist[i] = (self.nodelist[i][0], nodeswitch[self.nodelist[i][1]],
                                     nodeswitch[self.nodelist[i][2]])
 
-        print 'After switch, node list is:'
-        print self.nodelist
+        # print 'After switch, node list is:'
+        # print self.nodelist
 
         nodeswitch.clear()
         count = 0
@@ -489,8 +512,8 @@ class BDD(object):
             else:
                 self.nodelist[count] = newnodelist[i]
             count += 1
-        print 'Final node list:'
-        print self.nodelist
+        print 'Total %d nodes after reduce;' % len(self.nodelist)
+        # print self.nodelist
         self.nodenum = len(self.nodelist)
 
     def dump(self, filename, filetype=None):
@@ -584,14 +607,29 @@ if __name__ == "__main__":
     bdd1 = BDD()
     bdd2 = BDD()
     bdd3 = BDD()
+    f = open('bddtest.txt', 'r')
+    flag = False
+    l = list()
+    for line in f:
+        if not flag:
+            l1 = line.strip("\n")
+            flag = True
+        else:
+            l2 = line.strip("\n")
+            l.append((l1, l2))
+            flag = False
+    for li in l:
+        bdd1.construct(li[0])
+        bdd2.construct(li[1])
+        print "Length: %d ;" % len(li[0])
+        start = time.time()
+        bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
+        end1 = time.time()
+        print "Time used: %f;" % (end1 - start)
+        # bdd3.reduce()
+        end2 = time.time()
+        print "Time used for reduce: %f;"  % (end2 - end1)
+        print ""
 
-    bdd1.construct('1111X')
-    bdd2.construct('11X0X')
-    bdd2.dump('bdd2.png')
-    bdd1.dump('bdd1.png')
-    bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
-    bdd4 = BDD()
-    bdd4.apply('|', bdd1, bdd2)
-    bdd3.reduce()
-    bdd4.reduce()
+    f.close()
     print '...'

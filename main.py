@@ -35,7 +35,7 @@ for ruleset in bddrules.values():
         bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
         # bdd4 = bdd.BDD()
         # bdd4.apply('|', bdd1, bdd2)
-        # bdd3.reduce()
+        bdd3.reduce()
         # bdd2.dump('bdd2.png')
         # bdd1.dump('bdd1.png')
         # bdd3.dump('bdd3.png')

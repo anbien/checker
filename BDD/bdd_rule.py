@@ -46,5 +46,6 @@ def constructbddrules(file):
                 if (inport, outport) not in bddrules.keys():
                     bddrules[(inport, outport)] = list()
                 bddrules[(inport, outport)].append(match.upper())
+    f.close()
     return bddrules
 
