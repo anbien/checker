@@ -24,20 +24,34 @@ from BDD import bdd_rule
 # tf.show_tf_in_file("show.txt")
 # tf.write_bdd_rule("bdd_rule.txt")
 bddrules = bdd_rule.constructbddrules("bdd_rule.txt")
-
+bdd1 = bdd.BDD()
+bdd2 = bdd.BDD()
+bdd3 = bdd.BDD()
+flag = False
+rulesetnum = 0
 for ruleset in bddrules.values():
     if len(ruleset) > 1:
-        bdd1 = bdd.BDD()
-        bdd2 = bdd.BDD()
+        rulesetnum += 1
+        print '\n'
+        print "Start to apply ruleset %d:" % rulesetnum
+        print "Total %d rules;" % len(ruleset)
+        flag = True
         bdd1.construct(ruleset[0])
         bdd2.construct(ruleset[1])
-        bdd3 = bdd.BDD()
+        bdd3.clear()
         bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
-        # bdd4 = bdd.BDD()
-        # bdd4.apply('|', bdd1, bdd2)
         bdd3.reduce()
-        # bdd2.dump('bdd2.png')
-        # bdd1.dump('bdd1.png')
-        # bdd3.dump('bdd3.png')
+        if len(ruleset) > 2:
+            count = 0
+            for rule in ruleset:
+                print "\n%dth round;" % count
+                count += 1
+                if count < 2:
+                    continue
+                else:
+                    bdd1.construct(rule)
+                    bdd3 = bdd3.apply_ite('|', bdd1, bdd3)
+                    bdd3.reduce()
+
     else:
         pass

@@ -24,7 +24,7 @@ class BDD(object):
         self.false = 0
         self.true = 0
 
-    def __clear(self):
+    def clear(self):
         self.nodelist.clear()
         self.nextnode = 0
         self.nodenum = 0   # node number!
@@ -45,7 +45,7 @@ class BDD(object):
         :param s:  '00X00101'
         :return:
         """
-        self.__clear()
+        self.clear()
         self.varnum = s.__len__()
         first = -1
         for bit in s:
@@ -97,7 +97,7 @@ class BDD(object):
             self.nodelist[self.nextnode] = (self.level, True, -1)
             self.true = self.nextnode
         self.nodenum += 1
-        print self.nodelist
+        # print self.nodelist
 
     def __op(self, op, oper1, oper2):
         """
@@ -197,6 +197,9 @@ class BDD(object):
                                 stack.append({index: (state, num)})
                                 stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
                     else:
+                        result_bdd.nodelist[result_bdd.nextnode] = (bdd2node[0],
+                                                                    result_bdd.nextnode + 1, -1)
+                        result_bdd.nextnode += 1
                         state = 1
                         stack.append({index: (state, num)})
                         stack.append({(index[0], bdd2node[1]): (0, result_bdd.nextnode)})
@@ -231,6 +234,9 @@ class BDD(object):
                                 stack.append({index: (state, num)})
                                 stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
                     else:
+                        result_bdd.nodelist[result_bdd.nextnode] = (bdd1node[0],
+                                                                    result_bdd.nextnode + 1, -1)
+                        result_bdd.nextnode += 1
                         state = 1
                         stack.append({index: (state, num)})
                         stack.append({(bdd1node[1], index[1]): (0, result_bdd.nextnode)})
@@ -407,18 +413,18 @@ class BDD(object):
         falseflag = False
         trueflag = False
         # 对于最后一层,由于不存在子节点相同的情况,所以只加入不重复的就好
-        for j in xrange(len(nodeonlevel[last])):
-            if self.nodelist[nodeonlevel[last][j]][1] is False:
+        for j in xrange(len(nodeonlevel[last])):  # 对于最后一个Level上的节点:
+            if self.nodelist[nodeonlevel[last][j]][1] is False:  # false的节点value全标为1
                 valueofnodes[nodeonlevel[last][j]] = 1
-                if falseflag is False:
+                if falseflag is False:  # 记录第一个是false的节点;
                     falseflag = nodeonlevel[last][j]
-                    nodeswitch[nodeonlevel[last][j]] = nodeonlevel[last][j]
-                    uniquevalue[1] = (1, falseflag)
+                    nodeswitch[nodeonlevel[last][j]] = nodeonlevel[last][j]  # 自身不用替换;
+                    uniquevalue[1] = (1, falseflag)  # 记录下该点
                 else:
                     nodeswitch[nodeonlevel[last][j]] = falseflag
                     deadnode.add(nodeonlevel[last][j])
             else:
-                valueofnodes[nodeonlevel[last][j]] = 2
+                valueofnodes[nodeonlevel[last][j]] = 2  # true的节点value全标为2
                 if trueflag is False:
                     trueflag = nodeonlevel[last][j]
                     nodeswitch[nodeonlevel[last][j]] = nodeonlevel[last][j]
@@ -484,6 +490,7 @@ class BDD(object):
         # print deadnode
         # print ''
 
+        # print self.testLoop()
         for i in deadnode:
             self.nodelist.pop(i)
         # print 'After cut, node list is:'
@@ -496,25 +503,37 @@ class BDD(object):
 
         # print 'After switch, node list is:'
         # print self.nodelist
-
+        # print self.testLoop()
         nodeswitch.clear()
         count = 0
-        for i in self.nodelist:
+        for i in self.nodelist.keys():
             nodeswitch[i] = count
             count += 1
-        count = 0
         newnodelist = self.nodelist.copy()
         self.nodelist.clear()
-        for i in newnodelist:
+        for i in nodeswitch.keys():
             if newnodelist[i][2] != -1:
-                self.nodelist[count] = (newnodelist[i][0], nodeswitch[newnodelist[i][1]],
+                self.nodelist[nodeswitch[i]] = (newnodelist[i][0],
+                                    nodeswitch[newnodelist[i][1]],
                                     nodeswitch[newnodelist[i][2]])
             else:
-                self.nodelist[count] = newnodelist[i]
-            count += 1
+                self.nodelist[nodeswitch[i]] = newnodelist[i]
         print 'Total %d nodes after reduce;' % len(self.nodelist)
         # print self.nodelist
         self.nodenum = len(self.nodelist)
+        # print self.testLoop()
+
+    def testLoop(self):
+        for i in self.nodelist.keys():
+            if self.nodelist[i][2] != -1:
+                if self.nodelist[self.nodelist[i][1]][2] != -1 and self.nodelist[self.nodelist[i][2]][2] != -1:
+                    if (self.nodelist[self.nodelist[i][1]][1] == i) | (self.nodelist[self.nodelist[i][1]][2] == i):
+                        print "The loop node is %d" % i
+                        return True
+                    if (self.nodelist[self.nodelist[i][2]][1] == i) | (self.nodelist[self.nodelist[i][2]][2] == i):
+                        print "The loop node is %d" % i
+                        return True
+        return False
 
     def dump(self, filename, filetype=None):
         """
@@ -607,6 +626,7 @@ if __name__ == "__main__":
     bdd1 = BDD()
     bdd2 = BDD()
     bdd3 = BDD()
+    bdd4 = BDD()
     f = open('bddtest.txt', 'r')
     flag = False
     l = list()
@@ -624,9 +644,10 @@ if __name__ == "__main__":
         print "Length: %d ;" % len(li[0])
         start = time.time()
         bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
+        bdd4.apply('|', bdd1, bdd2)
         end1 = time.time()
         print "Time used: %f;" % (end1 - start)
-        # bdd3.reduce()
+        bdd3.reduce()
         end2 = time.time()
         print "Time used for reduce: %f;"  % (end2 - end1)
         print ""
