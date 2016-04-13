@@ -236,4 +236,51 @@ def wildcard_rewrite(w,mask,rewrite):
   else:
     raise Exception("length mismatch")
   
-
+# def parse_wildcard_from_file(file):
+#   f = open(file, 'r')
+#   wildcardrules = dict()
+#   for line in f:
+#     tokens = line.split()
+#     if line.startswith("New"):
+#       pass
+#     elif line.startswith("Action"):
+#       if not tokens[1] == "fwd":
+#         newfwdrule = False
+#       else:
+#         newfwdrule = True
+#     elif line.startswith("Inport"):
+#       inport = tokens[1].replace('[', '')
+#       inport = inport.replace(']', '')
+#     elif line.startswith("Outport"):
+#       outport = tokens[1].replace('[', '')
+#       outport = outport.replace(']', '')
+#     else:
+#       match = tokens[1]  #.replace(',', '')
+#       if newfwdrule:
+#         if (inport, outport) not in wildcardrules.keys():
+#           wildcardrules[(inport, outport)] = list()
+#         wildcardrules[(inport, outport)].append(match.upper())
+#   f.close()
+#   return wildcardrules
+#
+# if __name__ == "__main__":
+#   wildcardrules = parse_wildcard_from_file("../../bdd_rule.txt")
+#   wc = list()
+#   for ruleset in wildcardrules:
+#     for rule in wildcardrules[ruleset]:
+#       tepwc = wildcard_create_from_string(rule)
+#
+#       wc.append(tepwc)
+#   wc0 = wc[0]
+#   wc1 = wc[1]
+#   print wildcard_to_str(wc0)
+#   print wildcard_to_str(wc1)
+#   wc2 = wildcard_or(wc0, wc1)
+#   print wildcard_to_str(wc2)
+#   wc3 = wildcard_and(wc0, wc1)
+#   print wildcard_to_str(wc3)
+#   wcall = wc[0]
+#   for wc1 in wc:
+#     wcall = wildcard_or(wcall, wc1)
+#   print wildcard_to_str(wcall)
+#   print "..."

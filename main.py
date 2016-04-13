@@ -39,7 +39,7 @@ for ruleset in bddrules.values():
         bdd1.construct(ruleset[0])
         bdd2.construct(ruleset[1])
         bdd3.clear()
-        bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
+        bdd3 = bdd3.apply_ite('|', bdd2, bdd1)
         bdd3.reduce()
         if len(ruleset) > 2:
             count = 0
