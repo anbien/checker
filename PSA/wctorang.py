@@ -2,6 +2,9 @@
 # For checker project
 # This file contains the self-made function to transfer wildcard expression into ranges;
 
+from policyspace import HyperRect
+from policyspace import PolicySpace
+
 def constructwcrule(file):
     f = open(file, 'r')
     wcrules = dict()
@@ -29,42 +32,6 @@ def constructwcrule(file):
     f.close()
     return wcrules
 
-def cisco_router_format():
-    format = {}
-    format["vlan_pos"] = 0
-    format["ip_src_pos"] = 2
-    format["ip_dst_pos"] = 6
-    format["ip_proto_pos"] = 10
-    format["transport_src_pos"] = 11
-    format["transport_dst_pos"] = 13
-    format["transport_ctrl_pos"] = 15
-    format["vlan_len"] = 2
-    format["ip_src_len"] = 4
-    format["ip_dst_len"] = 4
-    format["ip_proto_len"] = 1
-    format["transport_src_len"] = 2
-    format["transport_dst_len"] = 2
-    format["transport_ctrl_len"] = 1
-    format["length"] = 16
-    return format
-
-def splitmatch(rule):
-    """
-
-    :param rule:
-    :return:
-    """
-    splitrule = dict()
-    tokens = rule.split(',')
-    splitrule['tran_ctrl'] = tokens[0]
-    splitrule['tran_dst'] = tokens[1] + tokens[2]
-    splitrule['tran_src'] = tokens[3] + tokens[4]
-    splitrule['ip_pro'] = tokens[5]
-    splitrule['ip_dst'] = tokens[6] + tokens[7] + tokens[8] + tokens[9]
-    splitrule['ip_src'] = tokens[10] + tokens[11] + tokens[12] + tokens[13]
-    splitrule['vlan'] = tokens[14] + tokens[15]
-    return splitrule
-
 
 def wildcard2range(length, wildcard):
     """
@@ -73,9 +40,37 @@ def wildcard2range(length, wildcard):
     :param wildcard:
     :return:
     """
-    ranges = list()
+    range = list()
+    if wildcard.isdigit():
+        range.append(int(wildcard))
+        range.append(int(wildcard))
+        return range
+    first_x = wildcard.index('X')
+    if first_x is 0:
+        range.append(0)
+    else:
+        number = wildcard[0:first_x]
+        range.append(int(number))
+    range.append(range[0] + 2 ** (length - first_x))
+    return range
 
-    return ranges
+
+def splitmatch(rule):
+    """
+
+    :param rule:
+    :return:
+    """
+    splitrule = list()
+    tokens = rule.split(',')
+    splitrule.append(tokens[0])
+    splitrule.append(tokens[1] + tokens[2])
+    splitrule.append(tokens[3] + tokens[4])
+    splitrule.append(tokens[5])
+    splitrule.append(tokens[6] + tokens[7] + tokens[8] + tokens[9])
+    splitrule.append(tokens[10] + tokens[11] + tokens[12] + tokens[13])
+    splitrule.append(tokens[14] + tokens[15])
+    return splitrule
 
 
 def wcruletorangerule(wcrules):
@@ -83,19 +78,29 @@ def wcruletorangerule(wcrules):
 
     :return:
     """
-    rangerule = dict()
-    for ruleset in wcrules:
-        rangerule[ruleset] = list()
-        for rule in wcrules[ruleset]:
-            splitrule = splitmatch(rule)
-            print splitrule
-            for value in splitrule.values():
+    rangeruleset = dict()
+    for ruleindex in wcrules:
+        rangeruleset[ruleindex] = list()
+        for singlematch in wcrules[ruleindex]:
+            splitrule = splitmatch(singlematch)
+            singlerangerule = list()
+            for dims in splitrule:
+                singlerangerule.append(wildcard2range(len(dims), dims))
+            rangeruleset[ruleindex].append(singlerangerule)
+    return rangeruleset
 
 
 if __name__ == "__main__":
 
     # test of wc to range
     wcrules = constructwcrule("../bdd_rule.txt")
+    rangerule = wcruletorangerule(wcrules)
+    hyrectset = dict()
+    for ruleindex in rangerule:
+        hyrectset[ruleindex] = PolicySpace([HyperRect(rangerule[ruleindex][0])])
+        for rule in rangerule[ruleindex]:  # rangerule[] is a policy
+            for singlerect in rule:  # singlerect is a hyperrect
+                test = HyperRect(rule)
 
 
 
