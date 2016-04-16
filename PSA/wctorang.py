@@ -108,6 +108,9 @@ if __name__ == "__main__":
         hyrectset[ruleindex] = PolicySpace([HyperRect(rangerule[ruleindex][0])])
         for rule in rangerule[ruleindex][1:]:  # rangerule[] is a policy
             hyrectset[ruleindex].or_rect(HyperRect(rule))
+    for ruleindex in rangerule:
+        print ruleindex
+    hyrectset[('100006', '')].__or__(hyrectset[('110002', '120002')])
     print "..."
 
 

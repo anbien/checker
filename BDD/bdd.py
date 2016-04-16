@@ -127,7 +127,7 @@ class BDD(object):
         self.varnum = bdd1.varnum
         self.__apply_rec(op, bdd1, bdd2, 0, 0)
 
-    def apply_ite(self, op, bdd1, bdd2):
+    def apply_ite(self, op, bdd1, bdd2, file = None):
         """
         do the apply in iterative way
         :param op:
@@ -290,7 +290,8 @@ class BDD(object):
                         stack.append({(bdd1node[2], index[1]): (0, result_bdd.nextnode)})
             else: # nownode.values() == 2:
                 pass
-        print "Ite count :%d;" % count
+        if file:
+            file.write("\n    Ite count :%d;" % count)
         result_bdd.nodenum = result_bdd.nextnode
         return result_bdd
 
@@ -379,12 +380,13 @@ class BDD(object):
         self.nodenum = self.nextnode
         return thisnode
 
-    def reduce(self):
+    def reduce(self, file = None):
         """
 
         :return:
         """
-        print 'Total %d nodes before reduce;' % self.nodenum
+        if file:
+            file.write('    Total %d nodes before reduce;' % self.nodenum)
         # 记录每层的节点 nodeonlevel[i][j] 第i层的第j个节点
         nodeonlevel = dict()  # record nodes number on the same level
 
@@ -518,7 +520,8 @@ class BDD(object):
                                     nodeswitch[newnodelist[i][2]])
             else:
                 self.nodelist[nodeswitch[i]] = newnodelist[i]
-        print 'Total %d nodes after reduce;' % len(self.nodelist)
+        if file:
+            file.write('    Total %d nodes after reduce;' % len(self.nodelist))
         # print self.nodelist
         self.nodenum = len(self.nodelist)
         # print self.testLoop()
