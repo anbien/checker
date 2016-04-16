@@ -42,15 +42,23 @@ def wildcard2range(length, wildcard):
     """
     range = list()
     if wildcard.isdigit():
-        range.append(int(wildcard))
-        range.append(int(wildcard))
+        digi = 0
+        for i in xrange(length):
+            if wildcard[i] is '1':
+                digi += 2 ** (length - 1 - i)
+        range.append(digi)
+        range.append(digi)
         return range
     first_x = wildcard.index('X')
     if first_x is 0:
         range.append(0)
     else:
         number = wildcard[0:first_x]
-        range.append(int(number))
+        digi = 0
+        for i in xrange(len(number)):
+            if number[i] is '1':
+                digi += 2 ** (len(number) - 1 - i)
+        range.append(digi)
     range.append(range[0] + 2 ** (length - first_x))
     return range
 
@@ -98,9 +106,8 @@ if __name__ == "__main__":
     hyrectset = dict()
     for ruleindex in rangerule:
         hyrectset[ruleindex] = PolicySpace([HyperRect(rangerule[ruleindex][0])])
-        for rule in rangerule[ruleindex]:  # rangerule[] is a policy
-            for singlerect in rule:  # singlerect is a hyperrect
-                test = HyperRect(rule)
-
+        for rule in rangerule[ruleindex][1:]:  # rangerule[] is a policy
+            hyrectset[ruleindex].or_rect(HyperRect(rule))
+    print "..."
 
 
