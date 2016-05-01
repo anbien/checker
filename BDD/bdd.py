@@ -630,30 +630,36 @@ if __name__ == "__main__":
     bdd2 = BDD()
     bdd3 = BDD()
     bdd4 = BDD()
-    f = open('bddtest.txt', 'r')
-    flag = False
-    l = list()
-    for line in f:
-        if not flag:
-            l1 = line.strip("\n")
-            flag = True
-        else:
-            l2 = line.strip("\n")
-            l.append((l1, l2))
-            flag = False
-    for li in l:
-        bdd1.construct(li[0])
-        bdd2.construct(li[1])
-        print "Length: %d ;" % len(li[0])
-        start = time.time()
-        bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
-        bdd4.apply('|', bdd1, bdd2)
-        end1 = time.time()
-        print "Time used: %f;" % (end1 - start)
-        bdd3.reduce()
-        end2 = time.time()
-        print "Time used for reduce: %f;"  % (end2 - end1)
-        print ""
+    bdd1.construct("XX11110")
+    bdd2.construct("1X11XX0")
+    bdd3.apply('|', bdd1, bdd2)
+    bdd3.dump('1.png')
+    bdd3.reduce()
+    bdd3.dump('2.png')
+    # f = open('bddtest.txt', 'r')
+    # flag = False
+    # l = list()
+    # for line in f:
+    #     if not flag:
+    #         l1 = line.strip("\n")
+    #         flag = True
+    #     else:
+    #         l2 = line.strip("\n")
+    #         l.append((l1, l2))
+    #         flag = False
+    # for li in l:
+    #     bdd1.construct(li[0])
+    #     bdd2.construct(li[1])
+    #     print "Length: %d ;" % len(li[0])
+    #     start = time.time()
+    #     bdd3 = bdd3.apply_ite('|', bdd1, bdd2)
+    #     bdd4.apply('|', bdd1, bdd2)
+    #     end1 = time.time()
+    #     print "Time used: %f;" % (end1 - start)
+    #     bdd3.reduce()
+    #     end2 = time.time()
+    #     print "Time used for reduce: %f;"  % (end2 - end1)
+    #     print ""
 
-    f.close()
+    # f.close()
     print '...'
