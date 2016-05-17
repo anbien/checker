@@ -92,7 +92,7 @@ class HyperRect(object):
         # 就是连乘...
 
     @classmethod
-    def clip(cls, clipped, clipping, inplace):  # 暂时不知道这是干嘛的...
+    def clip(cls, clipped, clipping, inplace):
         result = []
         if not inplace: clipped = deepcopy(clipped)
         for i in range(len(clipped)):

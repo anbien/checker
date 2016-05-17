@@ -6,6 +6,12 @@ from policyspace import HyperRect
 from policyspace import PolicySpace
 
 def constructwcrule(file):
+    """
+    Constructwcrule from bdd_rule file;
+    Remove other information, only keep the part we care about;
+    :param file: file name of bdd rule
+    :return: a dict, {(inport, outport):list(match)}
+    """
     f = open(file, 'r')
     wcrules = dict()
     for line in f:
@@ -35,10 +41,10 @@ def constructwcrule(file):
 
 def wildcard2range(length, wildcard):
     """
-
-    :param length:
-    :param wildcard:
-    :return:
+    convert wildcard expression to range expression;
+    :param length: length of this wildcard expression;
+    :param wildcard: wildcard expression waiting to be converted;
+    :return: a list of size 2, range, start with start and end with end;
     """
     range = list()
     if wildcard.isdigit():
@@ -65,9 +71,9 @@ def wildcard2range(length, wildcard):
 
 def splitmatch(rule):
     """
-
-    :param rule:
-    :return:
+    split match into 7 ranges according to 7 truples' meaning;
+    :param rule: match expression waiting to be splited;
+    :return: split rule;
     """
     splitrule = list()
     tokens = rule.split(',')
@@ -81,10 +87,25 @@ def splitmatch(rule):
     return splitrule
 
 
-def wcruletorangerule(wcrules):
+def genFullRule():
     """
 
     :return:
+    """
+    splitfullrule = splitmatch("XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX,XXXXXXXX")
+    fullrule = list()
+    for dims in splitfullrule:
+        fullrule.append(wildcard2range(len(dims), dims))
+    return fullrule
+
+
+def wcruletorangerule(wcrules):
+    """
+    Full function to turn a wc rule into range rule;
+    rangeruleset[ruleindex] is a set of range rule with same ruleindex:(inport, outport)
+    rangeruleset is the final set of a single router file;
+    :param wcrules: the whole set of rules of a single router file before dealing with;
+    :return: rangeruleset;
     """
     rangeruleset = dict()
     for ruleindex in wcrules:
