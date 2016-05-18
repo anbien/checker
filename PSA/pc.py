@@ -18,7 +18,7 @@ DIM_POINT_BITS = [32, 32, 16, 16, 8]
 DIM_SIP, DIM_DIP, DIM_SPORT, DIM_DPORT, DIM_PROTO, DIM_MAX = range(6)
 UINT32_MAX, UINT16_MAX, UINT8_MAX = ((1 << i) - 1 for i in [32, 16, 8])
 DIM_POINT_MAX = [UINT32_MAX, UINT32_MAX, UINT16_MAX, UINT16_MAX, UINT8_MAX]
-
+# DIM_POINT_MAX = [4, 4, UINT16_MAX, UINT16_MAX, UINT8_MAX]
 
 def is_range_overlap(left, right):
     return left[0] <= right[1] and left[1] >= right[0]
@@ -113,7 +113,7 @@ def shadow_rules(rule_set, dim):
         point_set.add((rule[dim][0] << 1) + 0)  # 0: begin
         point_set.add((rule[dim][1] << 1) + 1)  # 1: end
 
-        if rule[dim][0]:
+        if rule[dim][0]:  # not equal to 0
             point_set.add(((rule[dim][0] - 1) << 1) + 1)
 
         if rule[dim][1] != DIM_POINT_MAX[dim]:

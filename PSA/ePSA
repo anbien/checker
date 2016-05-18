@@ -5,10 +5,12 @@
 from wctorang import *
 from copy import deepcopy
 from itertools import chain
+from itertools import product
 import pc
 import random
+import time
 
-IndexNum = 2
+IndexNum = 5
 
 class IPolicySpace(object):
     def __init__(self, rects, index):
@@ -96,6 +98,10 @@ class IPolicySpace(object):
                 rects.extend(HyperRect.clip(sr.dims, rect.dims, True))
         self.rects = rects
 
+    # merge neibour rect together
+    def merge_rect(self):
+        return True
+
     # union a rectangle (inplace)
     def or_rect(self, rect):
         rects = []
@@ -112,38 +118,95 @@ class IPolicySpace(object):
             rects.append(deepcopy(rect))
         self.rects = rects
 
-def GenPolicy(Irs):
+
+def GenPolicyIte(Irs):
+    """
+
+    :param Irs: Indexed Rule set;
+    :return: Indexed PolicySpace dict;
+    """
+    IPoSpaces = dict()
+    for singleRule in reversed(Irs):
+        for IPoSpace in IPoSpaces.values():
+            IPoSpace.sub_rect(HyperRect(deepcopy(singleRule[:IndexNum])))
+        if singleRule[IndexNum] not in IPoSpaces.keys():
+            IPoSpaces[singleRule[IndexNum]] = IPolicySpace([HyperRect(deepcopy(singleRule[:IndexNum]))], singleRule[IndexNum])
+        else:
+            IPoSpaces[singleRule[IndexNum]].or_rect(HyperRect(deepcopy(singleRule[:IndexNum])))
+    return IPoSpaces
+
+
+def RuleLe(left, right):
+    for sd, vd in zip(left, right):
+        if sd[0] < vd[0] or sd[1] > vd[1]:
+            return False
+    return True
+
+
+def GenPolicyDir(Irs):
     """
 
     :param Irs:
     :return: Indexed PolicySpace dict;
     """
     IPoSpaces = dict()
-    for singleRule in reversed(Irs):
-        for IPoSpace in IPoSpaces.values():
-            IPoSpace.sub_rect(HyperRect(singleRule[:IndexNum]))
-        if singleRule[IndexNum] not in IPoSpaces.keys():
-            IPoSpaces[singleRule[IndexNum]] = IPolicySpace([HyperRect(singleRule[:IndexNum])], singleRule[IndexNum])
-        else:
-            IPoSpaces[singleRule[IndexNum]].or_rect(HyperRect(singleRule[:IndexNum]))
+    shadows = list()
+    for dim in range(0, IndexNum):
+        shadows.append(pc.shadow_rules(Irs, dim))
+    segnum = list()
+    volum = 1
+    for dim in range(0, IndexNum):
+        assert len(shadows[dim]) % 2 == 0
+        segnum.append(range(len(shadows[dim]) >> 1))
+        volum = volum * (len(shadows[dim]) >> 1)
+    print volum
+    for single in product(*segnum):
+        atomRect = list()
+        for dim in range(0, IndexNum):
+            atomRect.append([shadows[dim][single[dim] << 1], shadows[dim][(single[dim] << 1) + 1]])
+        for rule in Irs:
+            if RuleLe(atomRect, rule[:IndexNum]):
+                if rule[IndexNum] not in IPoSpaces.keys():
+                    # IPoSpaces[rule[IndexNum]] = IPolicySpace([HyperRect(atomRect)], rule[IndexNum])
+                    IPoSpaces[rule[IndexNum]] = set()
+                    IPoSpaces[rule[IndexNum]].add(single)
+                else:
+                    # IPoSpaces[rule[IndexNum]].or_rect(HyperRect(atomRect))
+                    IPoSpaces[rule[IndexNum]].add(single)
+                break
     return IPoSpaces
-
 
 
 if __name__ == "__main__":
     # test of atomicPSA
-    IndexNum = 2
-    rs = [[[1, 1], [1, 1], 1],
-          [[1, 2], [3, 4], 2],
-          [[3, 4], [1, 1], 3],
-          [[1, 3], [1, 1], 2],
-          [[2, 4], [2, 2], 1],
-          [[1, 2], [2, 3], 3],
-          [[1, 4], [1, 4], 4]]
-    IPSs = GenPolicy(rs)
-    print "Finish Simple Test"
+    # IndexNum = 2
+    # rs = [[[0, 1], [0, 1], 1],
+    #       [[0, 2], [3, 4], 2],
+    #       [[3, 4], [0, 1], 3],
+    #       [[0, 3], [0, 1], 2],
+    #       [[2, 4], [2, 2], 1],
+    #       [[0, 2], [2, 3], 3],
+    #       [[0, 4], [0, 4], 4]]
+    #
+    # IPSs = GenPolicyDir(rs)
+    # IPSs = GenPolicyIte(rs)
+    # print "Finish Simple Test"
     rs = pc.load_rules("../rules/acl1_100")
     IndexNum = 5
     for sr in rs:
         sr[IndexNum] = random.randint(0, 10)
+    time1 = time.time()
+    IPSsD = GenPolicyIte(rs[-6:])
+    time2 = time.time()
+    print time2 - time1
+    for i in range(5, 100, 5):
+        print i
+        time2 = time.time()
+        IPSsI = GenPolicyDir(rs[-i:])
+        time3 = time.time()
+        print time3 - time2
+    # for IPSkey in IPSsD.keys():
+        # assert IPSsD[IPSkey] == IPSsI[IPSkey]
+
+    shadow = pc.shadow_rules(rs[-6:-2], 3)
     print "Finish Real Test"
