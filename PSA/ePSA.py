@@ -166,7 +166,7 @@ def GenPolicyDir1(Irs):
                 if rule[IndexNum] not in IPoSpaces.keys():
                     IPoSpaces[rule[IndexNum]] = IPolicySpace([HyperRect(deepcopy(atomRect))], rule[IndexNum])
                 else:
-                    IPoSpaces[rule[IndexNum]].or_rect(HyperRect(deepcopy(atomRect)))
+                    IPoSpaces[rule[IndexNum]].rects.append(deepcopy(atomRect))
                 break
     return IPoSpaces
 
@@ -278,10 +278,10 @@ def correctnessTest():
         print time3 - time2
         for IPSkey in IPSsD.keys():
             assert IPSsD[IPSkey] == IPSsI[IPSkey]
+    print "Finish correctness test"
 
 
-if __name__ == "__main__":
-
+def timeTest():
     rs = ReadRules("../multi_rules/acl/r1_50")
     for i in range(5, 100, 5):
         print ""
@@ -299,8 +299,8 @@ if __name__ == "__main__":
         print time4 - time3
         # for IPSkey in IPSsD.keys():
             # assert IPSsD[IPSkey] == IPSsI[IPSkey]
+    print "Finish Time Test"
 
 
-
-    shadow = pc.shadow_rules(rs[-6:-2], 3)
-    print "Finish Real Test"
+if __name__ == "__main__":
+    timeTest()
