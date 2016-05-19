@@ -9,6 +9,7 @@ from itertools import product
 import pc
 import random
 import time
+from bitsets import bitset
 
 IndexNum = 5
 
@@ -267,7 +268,7 @@ def simpleTest():
 
 def correctnessTest():
     rs = ReadRules("../multi_rules/acl/r1_50")
-    for i in range(5, 45, 5):
+    for i in range(5, 50, 5):
         print i
         time1 = time.time()
         IPSsD = GenPolicyIte(rs[-i:])
@@ -283,7 +284,7 @@ def correctnessTest():
 
 def timeTest():
     rs = ReadRules("../multi_rules/acl/r1_50")
-    for i in range(5, 100, 5):
+    for i in range(5, 50, 5):
         print ""
         print i
         CountRange(rs[-i:])
@@ -302,5 +303,40 @@ def timeTest():
     print "Finish Time Test"
 
 
+def networkTest(routernum):
+    # 4 routers, in multi_rules/acl, r0~4
+    R = list()
+    for rnum in range(0, routernum):
+        R.append(GenPolicyIte(ReadRules("../multi_rules/acl/r" + str(rnum) + "_50")))
+
+    # count 5 routers each have how many rects:
+    Rcount = list()
+    for rnum in range(0, routernum):
+        count = list()
+        for pnum in range(0, routernum):
+            count.append(len(R[rnum][pnum].rects))
+        Rcount.append(count)
+
+    atomPS = set()
+    for index in product(range(routernum * routernum), range(routernum * (routernum - 1))):
+        # print index
+        router1 = index[0] / 5
+        port1 = index[0] % 5
+        router2 = index[1] / 5 + int(index[1]>=(router1 * 5))
+        port2 = index[1] % 5
+        atomPS.add(R[router1][port1].__or__(R[router2][port2]))
+
+    print "Finish network test"
+
+
+def testBitset():
+    items = ['aa', 'bb', 'cc', 'dd']
+    ibitset = bitset('lala', items)
+    print ibitset(['aa', 'bb']).bits()
+
+
+
 if __name__ == "__main__":
-    timeTest()
+    # timeTest()
+    networkTest(5)
+    # testBitset()
