@@ -154,12 +154,9 @@ def GenPolicyDir1(Irs):
     for dim in range(0, IndexNum):
         shadows.append(pc.shadow_rules(Irs, dim))
     segnum = list()
-    volum = 1
     for dim in range(0, IndexNum):
         assert len(shadows[dim]) % 2 == 0
         segnum.append(range(len(shadows[dim]) >> 1))
-        volum = volum * (len(shadows[dim]) >> 1)
-    print volum
     for single in product(*segnum):
         atomRect = list()
         for dim in range(0, IndexNum):
