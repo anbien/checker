@@ -9,10 +9,10 @@ Major clean up on Jul 10, 2012
 @author: Peyman Kazemian
 '''
 
-from ..utils.wildcard import *
+from HSA.utils.wildcard import *
 from array import array
-from ..utils.wildcard_dictionary import *
-from ..utils.hs_hash_table import hs_hash_table
+from HSA.utils.wildcard_dictionary import *
+from HSA.utils.hs_hash_table import hs_hash_table
 import json
 
 class TF(object):

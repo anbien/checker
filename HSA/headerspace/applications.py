@@ -7,10 +7,8 @@ Created on Jan 27, 2011
 
 @author: Peyman Kazemian
 '''
-import sys
-sys.path.append("..")
-from hs import headerspace
-from utils.wildcard import wildcard_create_bit_repeat
+from HSA.headerspace.hs import headerspace
+from HSA.utils.wildcard import wildcard_create_bit_repeat
 
 def print_p_node(p_node):
     print "-----"
