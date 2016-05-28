@@ -1,14 +1,18 @@
 # !/usr/bin/env python2
 # coding: utf-8
 
-from wctorang import *
+import random
+import time
 from copy import deepcopy
 from itertools import chain
 from itertools import product
-import pc
-import random
-import time
+from itertools import combinations
+
 from bitsets import bitset
+
+from wctorang import *
+import pc
+
 
 IndexNum = 5
 
@@ -120,106 +124,108 @@ class IPolicySpace(object):
         self.rects = rects
 
 
-def RuleLe(left, right):
+def rule_le(left, right):
     for sd, vd in zip(left, right):
         if sd[0] < vd[0] or sd[1] > vd[1]:
             return False
     return True
 
 
-def GenPolicyIte(Irs):
+def gen_rtr_policy_ori(index_rtr_rules):
     """
-    Convert a indexed Rule set into predicates of each port;
-    :param Irs: Indexed Rule set;
+    Convert a indexed rule set of a router into predicates of each port;
+    :param index_rtr_rules: Indexed Rule set;
     :return: Indexed PolicySpace dict;
     """
-    IPoSpaces = dict()
-    for singleRule in reversed(Irs):
-        for IPoSpace in IPoSpaces.values():
-            IPoSpace.sub_rect(HyperRect(deepcopy(singleRule[:IndexNum])))
-        if singleRule[IndexNum] not in IPoSpaces.keys():
-            IPoSpaces[singleRule[IndexNum]] = IPolicySpace([HyperRect(deepcopy(singleRule[:IndexNum]))], singleRule[IndexNum])
+    router_pre_dict = dict()
+    for singlerule in reversed(index_rtr_rules):
+        for port_pre in router_pre_dict.values():
+            port_pre.sub_rect(HyperRect(deepcopy(singlerule[:IndexNum])))
+        if singlerule[IndexNum] not in router_pre_dict.keys():
+            router_pre_dict[singlerule[IndexNum]] = IPolicySpace([HyperRect(deepcopy(singlerule[:IndexNum]))],
+                                                                 singlerule[IndexNum])
         else:
-            IPoSpaces[singleRule[IndexNum]].or_rect(HyperRect(deepcopy(singleRule[:IndexNum])))
-    return IPoSpaces
+            router_pre_dict[singlerule[IndexNum]].or_rect(HyperRect(deepcopy(singlerule[:IndexNum])))
+    return router_pre_dict
 
 
-def GenPolicyDir1(Irs):
+def gen_rtr_policy_atom_ps(index_rtr_rules):
     """
-    Convert a indexed Rule set into predicates of each port;
-    In a space - cut way;
-    :param Irs:
+    Convert a indexed rule set of a router into predicates of each port;
+    output is still in IPolicySpace structure;
+    :param index_rtr_rules:  Indexed rule in a router;
     :return: Indexed PolicySpace dict;
     """
-    IPoSpaces = dict()
+    router_pre_dict = dict()
     shadows = list()
     for dim in range(0, IndexNum):
-        shadows.append(pc.shadow_rules(Irs, dim))
+        shadows.append(pc.shadow_rules(index_rtr_rules, dim))
     segnum = list()
     for dim in range(0, IndexNum):
         assert len(shadows[dim]) % 2 == 0
         segnum.append(range(len(shadows[dim]) >> 1))
-    for single in product(*segnum):
-        atomRect = list()
+    for atom_index in product(*segnum):
+        atom_rect = list()
         for dim in range(0, IndexNum):
-            atomRect.append([shadows[dim][single[dim] << 1], shadows[dim][(single[dim] << 1) + 1]])
-        for rule in Irs:
-            if RuleLe(atomRect, rule[:IndexNum]):
-                if rule[IndexNum] not in IPoSpaces.keys():
-                    IPoSpaces[rule[IndexNum]] = IPolicySpace([HyperRect(deepcopy(atomRect))], rule[IndexNum])
+            atom_rect.append([shadows[dim][atom_index[dim] << 1], shadows[dim][(atom_index[dim] << 1) + 1]])
+        for rule in index_rtr_rules:
+            if rule_le(atom_rect, rule[:IndexNum]):
+                if rule[IndexNum] not in router_pre_dict.keys():
+                    router_pre_dict[rule[IndexNum]] = IPolicySpace([HyperRect(deepcopy(atom_rect))],
+                                                                   rule[IndexNum])
                 else:
-                    IPoSpaces[rule[IndexNum]].rects.append(HyperRect(deepcopy(atomRect)))
+                    router_pre_dict[rule[IndexNum]].rects.append(HyperRect(deepcopy(atom_rect)))
                 break
-    return IPoSpaces
+    return router_pre_dict
 
 
-def GenPolicyDir2(Irs):   # set version
+def gen_rtr_policy_atom_bs(index_rtr_rules):   # set version
     """
     Set version of GenPolicyDir;
     :param Irs:
     :return: Indexed PolicySpace dict;
     """
-    IPoSpaces = dict()
+    router_pre_dict = dict()
     shadows = list()
     for dim in range(0, IndexNum):
-        shadows.append(pc.shadow_rules(Irs, dim))
+        shadows.append(pc.shadow_rules(index_rtr_rules, dim))
     segnum = list()
     for dim in range(0, IndexNum):
         assert len(shadows[dim]) % 2 == 0
         segnum.append(range(len(shadows[dim]) >> 1))
-    for single in product(*segnum):
-        atomRect = list()
+    for atom_index in product(*segnum):
+        atom_rect = list()
         for dim in range(0, IndexNum):
-            atomRect.append([shadows[dim][single[dim] << 1], shadows[dim][(single[dim] << 1) + 1]])
-        for rule in Irs:
-            if RuleLe(atomRect, rule[:IndexNum]):
-                if rule[IndexNum] not in IPoSpaces.keys():
-                    IPoSpaces[rule[IndexNum]] = set()
-                    IPoSpaces[rule[IndexNum]].add(single)
+            atom_rect.append([shadows[dim][atom_index[dim] << 1], shadows[dim][(atom_index[dim] << 1) + 1]])
+        for rule in index_rtr_rules:
+            if rule_le(atom_rect, rule[:IndexNum]):
+                if rule[IndexNum] not in router_pre_dict.keys():
+                    router_pre_dict[rule[IndexNum]] = set()
+                    router_pre_dict[rule[IndexNum]].add(atom_index)
                 else:
-                    IPoSpaces[rule[IndexNum]].add(single)
+                    router_pre_dict[rule[IndexNum]].add(atom_index)
                 break
-    return IPoSpaces
+    return router_pre_dict
 
 
-def CountRange(Irs):
+def count_shadows(Irs):
     shadows = list()
     for dim in range(0, IndexNum):
         shadows.append(pc.shadow_rules(Irs, dim))
     segnum = list()
-    volum = 1
-    dimlen = list()
+    volume = 1
+    dim_len = list()
     print "This rule set is split into:"
     for dim in range(0, IndexNum):
         assert len(shadows[dim]) % 2 == 0
         segnum.append(range(len(shadows[dim]) >> 1))
-        volum = volum * (len(shadows[dim]) >> 1)
-        dimlen.append((len(shadows[dim]) >> 1))
-    print dimlen
-    print "Total volume: %d"% volum
+        volume *= (len(shadows[dim]) >> 1)
+        dim_len.append((len(shadows[dim]) >> 1))
+    print dim_len
+    print "Total volume: %d" % volume
 
 
-def GenCBRules(path, max):
+def gen_CB_rules(path):
     rs = pc.load_rules(path + ".txt")
     for sr in rs:
         sr[IndexNum] = random.randint(0, max)
@@ -231,7 +237,7 @@ def GenCBRules(path, max):
     f.close()
 
 
-def ReadCBRules(path):
+def load_CB_rules(path):
     rs = list()
     f = open(path + "ed.txt", 'r')
     for line in f:
@@ -248,44 +254,44 @@ def ReadCBRules(path):
     return rs
 
 
-def GenPolicyAtom(Irs_list):
+def gen_network_policy_atom(index_rtr_rules_list):
     """
-
-    :param Irs_list:
+    Gen atom predicate set for a whole network;
+    :param index_rtr_rules_list: indexed router rule set
     :return:
     """
-    routerNum = len(Irs_list)
-    IPS_list = list()
-    IPoSpaces_list = list()
-    for i in range(routerNum):
-        IPoSpaces_list.append([0] * routerNum)
-        IPS_list.append(GenPolicyIte(Irs_list[i]))
+    router_num = len(index_rtr_rules_list)
+    ori_PS_list = list()
+    rtr_atom_set_list = list()
+    for i in range(router_num):
+        rtr_atom_set_list.append([0] * router_num)
+        ori_PS_list.append(gen_rtr_policy_ori(index_rtr_rules_list[i]))
 
     # generate atomic policy space list:
     atomPSList = list()
     numofaPS = 0
-    for index1 in range(routerNum * routerNum):  # for each port:
-        router1 = index1 / routerNum
-        port1 = index1 % routerNum
-        for index2 in range((router1 + 1) * routerNum, routerNum * routerNum):
+    for index1 in range(router_num * router_num):  # for each port:
+        router1 = index1 / router_num
+        port1 = index1 % router_num
+        for index2 in range((router1 + 1) * router_num, router_num * router_num):
             # Noneset += 1
-            router2 = index2 / routerNum
-            port2 = index2 % routerNum
-            Atom = IPS_list[router1][port1].__and__(IPS_list[router2][port2])
+            router2 = index2 / router_num
+            port2 = index2 % router_num
+            Atom = ori_PS_list[router1][port1].__and__(ori_PS_list[router2][port2])
             # print (router1, port1, router2, port2)
-            if Atom != None:
+            if Atom is not None:
                 atomPSList.append(Atom)
                 # atomPSList.append((Atom, (router1, port1, router2, port2)))
-                IPoSpaces_list[router1][port1] += (1 << numofaPS)
-                IPoSpaces_list[router2][port2] += (1 << numofaPS)
+                rtr_atom_set_list[router1][port1] += (1 << numofaPS)
+                rtr_atom_set_list[router2][port2] += (1 << numofaPS)
                 numofaPS += 1
 
     atomPSTuple = tuple(atomPSList)
-    atomPSBitset = bitset('atomPSBitset', atomPSTuple)
-    return (atomPSBitset, IPoSpaces_list)
+    atom_PS_bitset = bitset('atomPSBitset', atomPSTuple)
+    return (atom_PS_bitset, rtr_atom_set_list)
 
 
-def DecodePolicyAtom1(atomPSBitset, IPoSpaceA, index):
+def decode_atom_policy(atomPSBitset, IPoSpaceA, index):
     atomset = atomPSBitset.fromint(IPoSpaceA).members()
     if atomset == ():
         IPoSpace = None
@@ -300,20 +306,6 @@ def DecodePolicyAtom1(atomPSBitset, IPoSpaceA, index):
                     IPoSpace.rects.append(atomrect)
     return IPoSpace
 
-
-def DecodePolicyAtom2(atomPSBitset, IPoSpaceA, index):
-    atomset = atomPSBitset.fromint(IPoSpaceA).members()
-    if atomset == ():
-        IPoSpace = None
-    else:
-        flag = True
-        for cube in atomset:
-            if flag:
-                IPoSpace = IPolicySpace(atomset[0].rects, index)
-                flag = False
-            else:
-                IPoSpace = IPoSpace.__or__(cube)
-    return IPoSpace
 
 def TestGenPolicyIte(Irs, IPoSpaces):
     """
@@ -333,6 +325,12 @@ def TestGenPolicyIte(Irs, IPoSpaces):
     assert TotalSpace == IPolicySpace([HyperRect(deepcopy(Irs[-1][:IndexNum]))], 0)
 
 
+def TestAtom(atomPSBitset):
+    atomSet = atomPSBitset.supremum.members()
+    for (atom1, atom2) in combinations(atomSet, 2):
+        assert atom1.__and__(atom2) is None
+
+
 def TestFunction():
     """
     ** Revise IndexNum to 2 when run this function!
@@ -346,8 +344,8 @@ def TestFunction():
           [[2, 4], [2, 2], 0],
           [[0, 2], [2, 3], 2],
           [[0, 4], [0, 4], 3]]
-    IPSs = GenPolicyDir1(rs)
-    IPSs = GenPolicyIte(rs)
+    IPSs = gen_rtr_policy_atom_ps(rs)
+    IPSs = gen_rtr_policy_ori(rs)
     Irs_list = list()
     rs = [[[0, 4], [0, 2], 0],
           [[0, 4], [0, 4], 1]]
@@ -355,33 +353,33 @@ def TestFunction():
     rs = [[[0, 2], [0, 4], 0],
           [[0, 4], [0, 4], 1]]
     Irs_list.append(rs)
-    GenPolicyAtom(Irs_list)
+    gen_network_policy_atom(Irs_list)
     print "Finish Simple Test"
 
 
 def TestConsistence(rule):
-    rs = ReadCBRules(rule)
-    IPSsD = GenPolicyIte(rs)
-    IPSsI = GenPolicyDir1(rs)
+    rs = load_CB_rules(rule)
+    IPSsD = gen_rtr_policy_ori(rs)
+    IPSsI = gen_rtr_policy_atom_ps(rs)
     for IPSkey in IPSsD.keys():
         assert IPSsD[IPSkey] == IPSsI[IPSkey]
     print "Finish correctness test"
 
 
 def TestTime(rule, rulenum):
-    rs = ReadCBRules(rule)
+    rs = load_CB_rules(rule)
     for i in range(5, rulenum, 5):
         print ""
         print "Rule Num: %d" % i
-        CountRange(rs[-i:])
+        count_shadows(rs[-i:])
         time1 = time.time()
-        IPSsI = GenPolicyIte(rs[-i:])
+        IPSsI = gen_rtr_policy_ori(rs[-i:])
         time2 = time.time()
         print time2 - time1
-        IPSsD1 = GenPolicyDir1(rs[-i:])
+        IPSsD1 = gen_rtr_policy_atom_ps(rs[-i:])
         time3 = time.time()
         print time3 - time2
-        IPSsD2 = GenPolicyDir2(rs[-i:])
+        IPSsD2 = gen_rtr_policy_atom_bs(rs[-i:])
         time4 = time.time()
         print time4 - time3
     print "Finish Time Test"
@@ -391,22 +389,22 @@ def TestRealNetwork(routernum, path, rulenum):
     # 5 routers, in multi_rules/acl, r0~4
     Irs_list = list()
     for rnum in range(0, routernum):
-        Irs_list.append(ReadCBRules(path + str(rnum) + "_" + str(rulenum)))
+        Irs_list.append(load_CB_rules(path + str(rnum) + "_" + str(rulenum)))
 
-    (atomPSBitset, IPoSpaceA_list1) = GenPolicyAtom(Irs_list)
+    (atomPSBitset, IPoSpaceA_list1) = gen_network_policy_atom(Irs_list)
     IPoSpace_list1 = list()
     for rnum in range(routernum):
         IPospace = list()
         for pnum in range(routernum):
-            IPospace.append(DecodePolicyAtom2(atomPSBitset, IPoSpaceA_list1[rnum][pnum], pnum))
+            IPospace.append(decode_atom_policy(atomPSBitset, IPoSpaceA_list1[rnum][pnum], pnum))
         IPoSpace_list1.append(IPospace)
 
     IPoSpace_list2 = list()
     for rnum in range(routernum):
-        IPoSpace_list2.append(GenPolicyIte(Irs_list[rnum]))
+        IPoSpace_list2.append(gen_rtr_policy_ori(Irs_list[rnum]))
 
     for i in range(routernum):
-        assert IPoSpace_list1[0][i] == IPoSpace_list2[0][i]
+         assert IPoSpace_list1[0][i] == IPoSpace_list2[0][i]
         print i
     print "Finish network test"
 
@@ -420,16 +418,16 @@ def TestSpeed(routernum, path, rulenum):
     print "Test with %d routers, each have %s rules;" % (routernum, rulenum)
     Irs_list = list()
     for rnum in range(0, routernum):
-        Irs_list.append(ReadCBRules(path + str(rnum) + "_" + rulenum))
+        Irs_list.append(load_CB_rules(path + str(rnum) + "_" + rulenum))
 
     time0 = time.time()
-    (atomPSBitset, IPoSpaceA_list1) = GenPolicyAtom(Irs_list)
+    (atomPSBitset, IPoSpaceA_list1) = gen_network_policy_atom(Irs_list)
     time1 = time.time()
     print "Atom Pre-dealing time: %f" % (time1 - time0)
     time0 = time.time()
     IPoSpace_list2 = list()
     for rnum in range(routernum):
-        IPoSpace_list2.append(GenPolicyIte(Irs_list[rnum]))
+        IPoSpace_list2.append(gen_rtr_policy_ori(Irs_list[rnum]))
     time1 = time.time()
     print "Original Pre-dealing time: %f" % (time1 - time0)
     print "---------------------------------------------------------------"
@@ -478,7 +476,7 @@ def TestSpeed(routernum, path, rulenum):
                 Atom = Atom | IPoSpaceA_list1[RtrPort[j][0]][RtrPort[j][1]]
             else:
                 Atom = Atom & IPoSpaceA_list1[RtrPort[j][0]][RtrPort[j][1]]
-        AtomPS = DecodePolicyAtom1(atomPSBitset, Atom, 0)
+        AtomPS = decode_atom_policy(atomPSBitset, Atom, 0)
         # AtomPS2 = DecodePolicyAtom2(atomPSBitset, Atom, 0)
         # assert AtomPS == AtomPS2
         time1 = time.time()
@@ -505,9 +503,15 @@ def TestSpeed(routernum, path, rulenum):
 
 
 if __name__ == "__main__":
+    #Irs_list = list()
+    #for rnum in range(0, 5):
+    #    Irs_list.append(load_CB_rules("../multi_rules/acl_50/r" + str(rnum) + "_50"))
+
+    #(atomPSBitset, IPoSpaceA_list1) = gen_network_policy_atom(Irs_list)
+    #TestAtom(atomPSBitset)
     # for i in range(5):
         # GenCBRules("../multi_rules/acl_50/r" + str(i) + "_50", 4)
-    TestSpeed(5, "../multi_rules/acl_50/r", "50")
-    TestSpeed(5, "../multi_rules/acl_100/r", "100")
-    TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
-    # TestRealNetwork(5, "../multi_rules/acl_50/r", 50)
+    #TestSpeed(5, "../multi_rules/acl_50/r", "50")
+    #TestSpeed(5, "../multi_rules/acl_100/r", "100")
+    #TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
+    TestRealNetwork(5, "../multi_rules/acl_50/r", 50)

@@ -47,7 +47,14 @@ class HyperRect(object):
                 subset = False
             if contain and (sd[0] > vd[0] or sd[1] < vd[1]):
                 contain = False
-        return -1 if subset else 1 if contain else 0
+        if subset:
+            return -1
+        else:
+            if contain:
+                return 1
+            else:
+                return 0
+        # return -1 if subset else 1 if contain else 0
 
     # intersect
     def __and__(self, value):
