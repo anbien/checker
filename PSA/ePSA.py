@@ -385,7 +385,7 @@ def TestTime(rule, rulenum):
     print "Finish Time Test"
 
 
-def TestRealNetwork(routernum, path, rulenum):
+def TestRealNetwork(routernum, path, rulenum): # 测试两种方法的一致性——正确性;
     # 5 routers, in multi_rules/acl, r0~4
     Irs_list = list()
     for rnum in range(0, routernum):
@@ -404,7 +404,7 @@ def TestRealNetwork(routernum, path, rulenum):
         IPoSpace_list2.append(gen_rtr_policy_ori(Irs_list[rnum]))
 
     for i in range(routernum):
-         assert IPoSpace_list1[0][i] == IPoSpace_list2[0][i]
+        assert IPoSpace_list1[0][i] == IPoSpace_list2[0][i]
         print i
     print "Finish network test"
 
@@ -511,7 +511,7 @@ if __name__ == "__main__":
     #TestAtom(atomPSBitset)
     # for i in range(5):
         # GenCBRules("../multi_rules/acl_50/r" + str(i) + "_50", 4)
-    #TestSpeed(5, "../multi_rules/acl_50/r", "50")
-    #TestSpeed(5, "../multi_rules/acl_100/r", "100")
-    #TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
-    TestRealNetwork(5, "../multi_rules/acl_50/r", 50)
+    TestSpeed(5, "../multi_rules/acl_50/r", "50")
+    TestSpeed(5, "../multi_rules/acl_100/r", "100")
+    TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
+    #TestRealNetwork(5, "../multi_rules/acl_50/r", 50)
