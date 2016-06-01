@@ -19,7 +19,7 @@ def constructwcrule(file):
         if line.startswith("New"):
             pass
         elif line.startswith("Action"):
-            if not tokens[1] == "fwd":
+            if tokens[1] not in ("fwd", "rw"):
                 newfwdrule = False
             else:
                 newfwdrule = True
@@ -65,7 +65,7 @@ def wildcard2range(length, wildcard):
             if number[i] is '1':
                 digi += 2 ** (len(number) - 1 - i)
         range.append(digi)
-    range.append(range[0] + 2 ** (length - first_x))
+    range.append(range[0] + 2 ** (length - first_x) - 1)
     return range
 
 
@@ -107,6 +107,7 @@ def wcruletorangerule(wcrules):
     :param wcrules: the whole set of rules of a single router file before dealing with;
     :return: rangeruleset;
     """
+    sum = 0
     rangeruleset = dict()
     for ruleindex in wcrules:
         rangeruleset[ruleindex] = list()
@@ -116,6 +117,20 @@ def wcruletorangerule(wcrules):
             for dims in splitrule:
                 singlerangerule.append(wildcard2range(len(dims), dims))
             rangeruleset[ruleindex].append(singlerangerule)
+        sum += len(rangeruleset[ruleindex])
+    print sum
+    return rangeruleset
+
+
+def gentestrangerule(wcrules):
+    rangeruleset = list()
+    for ruleindex in wcrules:
+        for singlematch in wcrules[ruleindex]:
+            splitrule = splitmatch(singlematch)
+            singlerangerule = list()
+            for dims in splitrule:
+                singlerangerule.append(wildcard2range(len(dims), dims))
+            rangeruleset.append(singlerangerule)
     return rangeruleset
 
 

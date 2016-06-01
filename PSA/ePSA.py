@@ -15,6 +15,7 @@ import pc
 
 
 IndexNum = 5
+DIM_POINT_BITS = [32, 32, 16, 16, 8]
 
 
 class IPolicySpace(object):
@@ -511,7 +512,17 @@ if __name__ == "__main__":
     #TestAtom(atomPSBitset)
     # for i in range(5):
         # GenCBRules("../multi_rules/acl_50/r" + str(i) + "_50", 4)
-    TestSpeed(5, "../multi_rules/acl_50/r", "50")
-    TestSpeed(5, "../multi_rules/acl_100/r", "100")
-    TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
+
+    # TestSpeed(5, "../multi_rules/acl_50/r", "50")
+    # TestSpeed(5, "../multi_rules/acl_100/r", "100")
+    # TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
+
     #TestRealNetwork(5, "../multi_rules/acl_50/r", 50)
+
+    rules = load_CB_rules("../multi_rules/acl_1K/r0_1K")
+    for singlerule in rules:
+        for dims in range(5):
+            prefix = pc.range2prefix(singlerule[dims], DIM_POINT_BITS[dims])
+            if len(prefix) > 1:
+                print "aho"
+    print ""

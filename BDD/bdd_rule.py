@@ -49,3 +49,27 @@ def constructbddrules(file):
     f.close()
     return bddrules
 
+
+def conwcrules(file):
+    f = open(file, 'r')
+    wcrules = list()
+    for line in f:
+        tokens = line.split()
+        if line.startswith("New"):
+            pass
+        elif line.startswith("Action"):
+            if not tokens[1] == "fwd":
+                newfwdrule = False
+            else:
+                newfwdrule = True
+        elif line.startswith("Inport"):
+            inport = tokens[1].replace('[', '')
+            inport = inport.replace(']', '')
+        elif line.startswith("Outport"):
+            outport = tokens[1].replace('[', '')
+            outport = outport.replace(']', '')
+        else:
+            match = tokens[1].replace(',', '')
+            wcrules.append(match.upper())
+    f.close()
+    return wcrules
