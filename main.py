@@ -76,7 +76,7 @@ def predeal_atom(range_rule):
         # print atom_index
     return atom_rule
 
-@profile
+#@profile
 def predeal_atom2(range_rule):
     atom_rule = [0] * len(range_rule)
     shadows = list()
@@ -105,7 +105,7 @@ def predeal_atom2(range_rule):
         # print atom_index
     return atom_rule
 
-@profile
+#@profile
 def predeal_bdd(prefix_rules):
     BDDlist = list()
     for single_rule in prefix_rules:
@@ -116,16 +116,17 @@ def predeal_bdd(prefix_rules):
     return BDDlist
 
 
-@profile
+#@profile
 def predeal_wc(predix_rules):
     wc_list = list()
     for single_rule in prefix_rules:
+        wc_test = headerspace(16)
         wc_test = wildcard_create_from_string(single_rule)
         wc_list.append(wc_test)
     return wc_list
 
 
-@profile
+#@profile
 def predeal_psa(range_rules):
     psa_list = list()
     for single_rule in prefix_rules:
@@ -162,14 +163,15 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     bdd1 = bdd.BDD()
     bdd2 = bdd.BDD()
     bdd3 = bdd.BDD()
-    time1 = time.time()
-    for single_rule in prefix_rules:
-        bdd1.construct(single_rule)
-        bdd1.clear()
-    time2 = time.time()
-    bdd_pre_time = time2 - time1
-    print "Pre-dealing time: %f" % (time2 - time1)
+    # time1 = time.time()
+    # for single_rule in prefix_rules:
+    #     bdd1.construct(single_rule)
+    #     bdd1.clear()
+    # time2 = time.time()
+    # bdd_pre_time = time2 - time1
+    # print "Pre-dealing time: %f" % (time2 - time1)
 
+    bdd_list = predeal_bdd(prefix_rules)
     bdd_time = list()
     for i in range(testnum):
         bdd1.clear()
@@ -202,12 +204,14 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     print "wildcard:"
     wc_time = list()
     wc_test = headerspace(16)
-    time1 = time.time()
-    for single_rule in prefix_rules:
-        wc_test = wildcard_create_from_string(single_rule)
-    time2 = time.time()
-    wc_pre_time = time2 - time1
-    print "Pre-dealing time: %f" % (time2 - time1)
+    # time1 = time.time()
+    # for single_rule in prefix_rules:
+    #     wc_test = wildcard_create_from_string(single_rule)
+    # time2 = time.time()
+    # wc_pre_time = time2 - time1
+    # print "Pre-dealing time: %f" % (time2 - time1)
+    wc_list = predeal_wc(prefix_rules)
+
     for i in range(testnum):
         time1 = time.time()
         wc1 = headerspace(16)
@@ -229,14 +233,17 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     print "PSA:"
     psa_time = list()
     wcrules = wctorang.constructwcrule("./stanford/" + router_ + "_bdd_rule.txt")
+
     range_rule = wctorang.gentestrangerule(wcrules)
 
-    time1 = time.time()
-    for single_rule in prefix_rules:
-        psa_test = PolicySpace([HyperRect(deepcopy(single_rule))])
-    time2 = time.time()
-    psa_pre_time = time2 - time1
-    print "Pre-dealing time: %f" % (time2 - time1)
+    # time1 = time.time()
+    # for single_rule in prefix_rules:
+    #     psa_test = PolicySpace([HyperRect(deepcopy(single_rule))])
+    # time2 = time.time()
+    # psa_pre_time = time2 - time1
+    # print "Pre-dealing time: %f" % (time2 - time1)
+
+    pca_list = predeal_psa(range_rule)
 
     for i in range(testnum):
         time1 = time.time()
@@ -318,16 +325,16 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
 # test_simple_policy_intersect("roza", 200, 5)
 # test_simple_policy_intersect("rozb", 200, 5)
 
-prefix_rules = bdd_rule.conwcrules("./stanford/bbra_bdd_rule.txt")
-predeal_bdd(prefix_rules)
-print "bdd done"
-predeal_wc(prefix_rules)
-print "wc done"
-wcrules = wctorang.constructwcrule("./stanford/bbra_bdd_rule.txt")
-range_rule = wctorang.gentestrangerule(wcrules)
-predeal_atom2(range_rule)
-
-predeal_psa(range_rule)
+# prefix_rules = bdd_rule.conwcrules("./stanford/bbra_bdd_rule.txt")
+# predeal_bdd(prefix_rules)
+# print "bdd done"
+# predeal_wc(prefix_rules)
+# print "wc done"
+# wcrules = wctorang.constructwcrule("./stanford/bbra_bdd_rule.txt")
+# range_rule = wctorang.gentestrangerule(wcrules)
+# predeal_atom2(range_rule)
+#
+# predeal_psa(range_rule)
 
 test_simple_policy_intersect("bbra", 200, 5)
 
