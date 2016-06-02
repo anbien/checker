@@ -76,7 +76,7 @@ def predeal_atom(range_rule):
         # print atom_index
     return atom_rule
 
-# @profile
+@profile
 def predeal_atom2(range_rule):
     atom_rule = [0] * len(range_rule)
     shadows = list()
@@ -105,7 +105,35 @@ def predeal_atom2(range_rule):
         # print atom_index
     return atom_rule
 
+@profile
+def predeal_bdd(prefix_rules):
+    BDDlist = list()
+    for single_rule in prefix_rules:
+        bdd1 = bdd.BDD()
+        bdd1.construct(single_rule)
+        BDDlist.append(bdd1)
+        bdd1.clear()
+    return BDDlist
 
+
+@profile
+def predeal_wc(predix_rules):
+    wc_list = list()
+    for single_rule in prefix_rules:
+        wc_test = wildcard_create_from_string(single_rule)
+        wc_list.append(wc_test)
+    return wc_list
+
+
+@profile
+def predeal_psa(range_rules):
+    psa_list = list()
+    for single_rule in prefix_rules:
+        psa_test = PolicySpace([HyperRect(deepcopy(single_rule))])
+        psa_list.append(psa_test)
+    return psa_list
+
+@profile
 def test_simple_policy_intersect(router_, rulenum, testnum):
     """
 
@@ -266,18 +294,18 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     print "Average time: %f" % (sum(atomic_time) / len(atomic_time))
 
 
-wcrules = wctorang.constructwcrule("./stanford/bbra_bdd_rule.txt")
-range_rule = wctorang.gentestrangerule(wcrules)
-for i in [50, 100, 200, 400, 600, 800, 990]:
-    segnum = list()
-    for dim in range(SF_DIM_NUM):
-        segnum.append(len(pc.shadow_rules(range_rule[:i], dim)) >> 1)
-    volume = reduce(mul, (segnum[d] for d in range(len(segnum))))
-    print "%d rules, volume: %d" % (i, volume)
-    time1 = time.time()
-    atom3_rule = predeal_atom2(range_rule[:i])
-    time2 = time.time()
-    print "pre-dealing time: %f" % (time2 - time1)
+# wcrules = wctorang.constructwcrule("./stanford/bbra_bdd_rule.txt")
+# range_rule = wctorang.gentestrangerule(wcrules)
+# for i in [50, 100, 200, 400, 600, 800, 990]:
+#     segnum = list()
+#     for dim in range(SF_DIM_NUM):
+#         segnum.append(len(pc.shadow_rules(range_rule[:i], dim)) >> 1)
+#     volume = reduce(mul, (segnum[d] for d in range(len(segnum))))
+#     print "%d rules, volume: %d" % (i, volume)
+#     time1 = time.time()
+#     atom3_rule = predeal_atom2(range_rule[:i])
+#     time2 = time.time()
+#     print "pre-dealing time: %f" % (time2 - time1)
 
 # test_simple_policy_intersect("bbra", 200, 5)
 # test_simple_policy_intersect("bbrb", 200, 5)
@@ -289,3 +317,17 @@ for i in [50, 100, 200, 400, 600, 800, 990]:
 # test_simple_policy_intersect("pozb", 200, 5)
 # test_simple_policy_intersect("roza", 200, 5)
 # test_simple_policy_intersect("rozb", 200, 5)
+
+prefix_rules = bdd_rule.conwcrules("./stanford/bbra_bdd_rule.txt")
+predeal_bdd(prefix_rules)
+print "bdd done"
+predeal_wc(prefix_rules)
+print "wc done"
+wcrules = wctorang.constructwcrule("./stanford/bbra_bdd_rule.txt")
+range_rule = wctorang.gentestrangerule(wcrules)
+predeal_atom2(range_rule)
+
+predeal_psa(range_rule)
+
+test_simple_policy_intersect("bbra", 200, 5)
+
