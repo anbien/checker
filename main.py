@@ -6,7 +6,6 @@ Created by lichee
 import time
 import random
 from itertools import product
-from itertools import chain
 from operator import mul
 
 from HSA.headerspace.hs import *
@@ -127,12 +126,22 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
 
     print "==============================================================================="
     print "Start the set operation test of router " + router_
+    print "This ruleset have %d rules in total" % len(prefix_rules)
     print "Test rule number: %d, test number: %d" % (rulenum, testnum)
+    print "-----------------------------------------------------------------------"
     # Here start BDD
     print "BDD:"
     bdd1 = bdd.BDD()
     bdd2 = bdd.BDD()
     bdd3 = bdd.BDD()
+    time1 = time.time()
+    for single_rule in prefix_rules:
+        bdd1.construct(single_rule)
+        bdd1.clear()
+    time2 = time.time()
+    bdd_pre_time = time2 - time1
+    print "Pre-dealing time: %f" % (time2 - time1)
+
     bdd_time = list()
     for i in range(testnum):
         bdd1.clear()
@@ -156,12 +165,21 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
         time2 = time.time()
         bdd_time.append(time2 - time1)
     print bdd_time
-    print "Average time: %f" % (sum(bdd_time) / len(bdd_time))
+    print "Average time: %f" % ((sum(bdd_time) / len(bdd_time)) - bdd_pre_time * rulenum /
+                                len(prefix_rules))
+    print "Original average time: %f" % (sum(bdd_time) / len(bdd_time))
     print "-----------------------------------------------------------------------"
 
     # Wildcard Expression
     print "wildcard:"
     wc_time = list()
+    wc_test = headerspace(16)
+    time1 = time.time()
+    for single_rule in prefix_rules:
+        wc_test = wildcard_create_from_string(single_rule)
+    time2 = time.time()
+    wc_pre_time = time2 - time1
+    print "Pre-dealing time: %f" % (time2 - time1)
     for i in range(testnum):
         time1 = time.time()
         wc1 = headerspace(16)
@@ -174,7 +192,9 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
         time2 = time.time()
         wc_time.append(time2 - time1)
     print wc_time
-    print "Average time: %f" % (sum(wc_time) / len(wc_time))
+    print "Average time: %f" % ((sum(wc_time) / len(wc_time)) - wc_pre_time * rulenum /
+                                len(prefix_rules))
+    print "Original average time: %f" % (sum(wc_time) / len(wc_time))
     print "-----------------------------------------------------------------------"
 
     # PSA test
@@ -182,6 +202,14 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     psa_time = list()
     wcrules = wctorang.constructwcrule("./stanford/" + router_ + "_bdd_rule.txt")
     range_rule = wctorang.gentestrangerule(wcrules)
+
+    time1 = time.time()
+    for single_rule in prefix_rules:
+        psa_test = PolicySpace([HyperRect(deepcopy(single_rule))])
+    time2 = time.time()
+    psa_pre_time = time2 - time1
+    print "Pre-dealing time: %f" % (time2 - time1)
+
     for i in range(testnum):
         time1 = time.time()
         hyrectset = PolicySpace([HyperRect(deepcopy(range_rule[testset[i][0][0]]))])
@@ -193,28 +221,30 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
         time2 = time.time()
         psa_time.append(time2 - time1)
     print psa_time
-    print "Time: %f" % (sum(psa_time) / len(psa_time))
+    print "Average time: %f" % ((sum(psa_time) / len(psa_time)) - psa_pre_time * rulenum /
+                                len(prefix_rules))
+    print "Original average time: %f" % (sum(psa_time) / len(psa_time))
     print "-----------------------------------------------------------------------"
 
-    print "Atomic1:"
-    time1 = time.time()
-    atom_rule = predeal_atom(range_rule)
-    time2 = time.time()
-    print "Pre-dealing time: %f" % (time2 - time1)
-    atomic_time = list()
-    for i in range(testnum):
-        time1 = time.time()
-        result = atom_rule[testset[i][0][0]]
-        for rule_action in testset[i][1:-1]:
-            if rule_action[1]:
-                result = result | atom_rule[rule_action[0]]
-            else:
-                result = result & atom_rule[rule_action[0]]
-        time2 = time.time()
-        atomic_time.append(time2 - time1)
-    print atomic_time
-    print "Average time: %f" % (sum(atomic_time) / len(atomic_time))
-    print "-----------------------------------------------------------------------"
+    # print "Atomic1:"
+    # time1 = time.time()
+    # atom_rule = predeal_atom(range_rule)
+    # time2 = time.time()
+    # print "Pre-dealing time: %f" % (time2 - time1)
+    # atomic_time = list()
+    # for i in range(testnum):
+    #     time1 = time.time()
+    #     result = atom_rule[testset[i][0][0]]
+    #     for rule_action in testset[i][1:-1]:
+    #         if rule_action[1]:
+    #             result = result | atom_rule[rule_action[0]]
+    #         else:
+    #             result = result & atom_rule[rule_action[0]]
+    #     time2 = time.time()
+    #     atomic_time.append(time2 - time1)
+    # print atomic_time
+    # print "Average time: %f" % (sum(atomic_time) / len(atomic_time))
+    # print "-----------------------------------------------------------------------"
 
     print "Atomic2:"
     time1 = time.time()
@@ -236,3 +266,12 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     print "Average time: %f" % (sum(atomic_time) / len(atomic_time))
 
 test_simple_policy_intersect("bbra", 200, 5)
+test_simple_policy_intersect("bbrb", 200, 5)
+test_simple_policy_intersect("boza", 200, 5)
+test_simple_policy_intersect("bozb", 200, 5)
+test_simple_policy_intersect("goza", 200, 5)
+test_simple_policy_intersect("gozb", 200, 5)
+test_simple_policy_intersect("poza", 200, 5)
+test_simple_policy_intersect("pozb", 200, 5)
+test_simple_policy_intersect("roza", 200, 5)
+test_simple_policy_intersect("rozb", 200, 5)
