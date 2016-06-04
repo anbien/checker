@@ -5,6 +5,7 @@ Created by lichee
 """
 import time
 import random
+import sys
 from itertools import product
 from operator import mul
 
@@ -117,7 +118,7 @@ def predeal_bdd(prefix_rules):
 
 
 #@profile
-def predeal_wc(predix_rules):
+def predeal_wc(prefix_rules):
     wc_list = list()
     for single_rule in prefix_rules:
         wc_test = headerspace(16)
@@ -129,12 +130,12 @@ def predeal_wc(predix_rules):
 #@profile
 def predeal_psa(range_rules):
     psa_list = list()
-    for single_rule in prefix_rules:
+    for single_rule in range_rules:
         psa_test = PolicySpace([HyperRect(deepcopy(single_rule))])
         psa_list.append(psa_test)
     return psa_list
 
-@profile
+#@profile
 def test_simple_policy_intersect(router_, rulenum, testnum):
     """
 
@@ -163,42 +164,49 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     bdd1 = bdd.BDD()
     bdd2 = bdd.BDD()
     bdd3 = bdd.BDD()
-    # time1 = time.time()
-    # for single_rule in prefix_rules:
-    #     bdd1.construct(single_rule)
-    #     bdd1.clear()
-    # time2 = time.time()
-    # bdd_pre_time = time2 - time1
-    # print "Pre-dealing time: %f" % (time2 - time1)
+    time1 = time.time()
+    for single_rule in prefix_rules:
+        bdd1.construct(single_rule)
+        bdd1.clear()
+    time2 = time.time()
+    bdd_pre_time = time2 - time1
+    print "Pre-dealing time: %f" % (time2 - time1)
 
     bdd_list = predeal_bdd(prefix_rules)
     bdd_time = list()
-    for i in range(testnum):
-        bdd1.clear()
-        bdd2.clear()
-        bdd3.clear()
-        time1 = time.time()
-        bdd1.construct(prefix_rules[testset[i][0][0]])
-        bdd2.construct(prefix_rules[testset[i][1][0]])
-        if testset[i][0][1]:
-            bdd3 = bdd3.apply_ite('|', bdd2, bdd1)
-        else:
-            bdd3 = bdd3.apply_ite('&', bdd2, bdd1)
-        bdd3.reduce()
-        for rule_action in testset[i][2:-1]:
-            bdd1.construct(prefix_rules[rule_action[0]])
-            if rule_action[1]:
-                bdd3 = bdd3.apply_ite('|', bdd1, bdd3)
-            else:
-                bdd3 = bdd3.apply_ite('&', bdd1, bdd3)
-            bdd3.reduce()
-        time2 = time.time()
-        bdd_time.append(time2 - time1)
-    print bdd_time
-    print "Average time: %f" % ((sum(bdd_time) / len(bdd_time)) - bdd_pre_time * rulenum /
-                                len(prefix_rules))
-    print "Original average time: %f" % (sum(bdd_time) / len(bdd_time))
-    print "-----------------------------------------------------------------------"
+    # for i in range(testnum):
+    #     bdd1.clear()
+    #     bdd2.clear()
+    #     bdd3.clear()
+    #     time1 = time.time()
+    #     bdd1.construct(prefix_rules[testset[i][0][0]])
+    #     bdd2.construct(prefix_rules[testset[i][1][0]])
+    #     if testset[i][0][1]:
+    #         bdd3 = bdd3.apply_ite('|', bdd2, bdd1)
+    #     else:
+    #         bdd3 = bdd3.apply_ite('&', bdd2, bdd1)
+    #     bdd3.reduce()
+    #     totalnode = bdd3.nodenum
+    #     maxnode = bdd3.nodenum
+    #     for rule_action in testset[i][2:-1]:
+    #         bdd1.construct(prefix_rules[rule_action[0]])
+    #         if rule_action[1]:
+    #             bdd3 = bdd3.apply_ite('|', bdd1, bdd3)
+    #         else:
+    #             bdd3 = bdd3.apply_ite('&', bdd1, bdd3)
+    #         bdd3.reduce()
+    #         totalnode += bdd3.nodenum
+    #         if maxnode < bdd3.nodenum:
+    #             maxnode = bdd3.nodenum
+    #     time2 = time.time()
+    #     bdd_time.append(time2 - time1)
+    #     print "Average node num: %f" % (totalnode / len(prefix_rules))
+    #     print "Max node num: %d" % maxnode
+    # print bdd_time
+    # #print "Average time: %f" % ((sum(bdd_time) / len(bdd_time)) - bdd_pre_time * rulenum /
+    # #                           len(prefix_rules))
+    # print "Original average time: %f" % (sum(bdd_time) / len(bdd_time))
+    # print "-----------------------------------------------------------------------"
 
     # Wildcard Expression
     print "wildcard:"
@@ -216,16 +224,24 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
         time1 = time.time()
         wc1 = headerspace(16)
         wc1.add_hs(wildcard_create_from_string(prefix_rules[testset[i][0][0]]))
+        wc_max = wc1.hs_list.__len__()
+        wc_num = wc_max
         for rule_action in testset[i][1:-1]:
             if rule_action[1]:
                 wc1.add_hs(wildcard_create_from_string(prefix_rules[rule_action[0]]))
             else:
                 wc1.intersect(wildcard_create_from_string(prefix_rules[rule_action[0]]))
+            if wc1.hs_list:
+                wc_num += len(wc1.hs_list)
+                if wc_max < len(wc1.hs_list):
+                    wc_max = len(wc1.hs_list)
         time2 = time.time()
+        print "Average wc num: %f" % (wc_num / len(prefix_rules))
+        print "Max wc num %d" % wc_max
         wc_time.append(time2 - time1)
     print wc_time
-    print "Average time: %f" % ((sum(wc_time) / len(wc_time)) - wc_pre_time * rulenum /
-                                len(prefix_rules))
+    #print "Average time: %f" % ((sum(wc_time) / len(wc_time)) - wc_pre_time * rulenum /
+    #                            len(prefix_rules))
     print "Original average time: %f" % (sum(wc_time) / len(wc_time))
     print "-----------------------------------------------------------------------"
 
@@ -248,16 +264,23 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
     for i in range(testnum):
         time1 = time.time()
         hyrectset = PolicySpace([HyperRect(deepcopy(range_rule[testset[i][0][0]]))])
+        hr_num = len(hyrectset.rects)
+        hr_max = hr_num
         for rule_action in testset[i][1:-1]:
             if rule_action[1]:
                 hyrectset.or_rect(HyperRect(deepcopy(range_rule[rule_action[0]])))
             else:
                 hyrectset.and_rect(HyperRect(deepcopy(range_rule[rule_action[0]])))
+            hr_num += len(hyrectset.rects)
+            if hr_max < len(hyrectset.rects):
+                hr_max = len(hyrectset.rects)
         time2 = time.time()
+        print "Average num: %d" % (hr_num / len(range_rule))
+        print "Max: %d" % hr_max
         psa_time.append(time2 - time1)
     print psa_time
-    print "Average time: %f" % ((sum(psa_time) / len(psa_time)) - psa_pre_time * rulenum /
-                                len(prefix_rules))
+    #print "Average time: %f" % ((sum(psa_time) / len(psa_time)) - psa_pre_time * rulenum /
+    #                            len(prefix_rules))
     print "Original average time: %f" % (sum(psa_time) / len(psa_time))
     print "-----------------------------------------------------------------------"
 
@@ -336,5 +359,5 @@ def test_simple_policy_intersect(router_, rulenum, testnum):
 #
 # predeal_psa(range_rule)
 
-test_simple_policy_intersect("bbra", 200, 5)
+test_simple_policy_intersect("bbra", 200, 1)
 

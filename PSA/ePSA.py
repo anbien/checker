@@ -226,7 +226,7 @@ def count_shadows(Irs):
     print "Total volume: %d" % volume
 
 
-def gen_CB_rules(path):
+def gen_CB_rules(path, max):
     rs = pc.load_rules(path + ".txt")
     for sr in rs:
         sr[IndexNum] = random.randint(0, max)
@@ -511,18 +511,30 @@ if __name__ == "__main__":
     #(atomPSBitset, IPoSpaceA_list1) = gen_network_policy_atom(Irs_list)
     #TestAtom(atomPSBitset)
     # for i in range(5):
-        # GenCBRules("../multi_rules/acl_50/r" + str(i) + "_50", 4)
+    #     gen_CB_rules("../multi_rules/fw_100/r" + str(i) + "_100", 4)
+    #     gen_CB_rules("../multi_rules/fw_1K/r" + str(i) + "_1K", 4)
+    #     gen_CB_rules("../multi_rules/ipc_50/r" + str(i) + "_50", 4)
+    #     gen_CB_rules("../multi_rules/ipc_100/r" + str(i) + "_100", 4)
+    #     gen_CB_rules("../multi_rules/ipc_1K/r" + str(i) + "_1K", 4)
 
-    # TestSpeed(5, "../multi_rules/acl_50/r", "50")
-    # TestSpeed(5, "../multi_rules/acl_100/r", "100")
-    # TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
+    TestSpeed(5, "../multi_rules/acl_50/r", "50")
+    TestSpeed(5, "../multi_rules/acl_100/r", "100")
+    TestSpeed(5, "../multi_rules/acl_1K/r", "1K")
+
+    TestSpeed(5, "../multi_rules/fw_50/r", "50")
+    TestSpeed(5, "../multi_rules/fw_100/r", "100")
+    TestSpeed(5, "../multi_rules/fw_1K/r", "1K")
+
+    TestSpeed(5, "../multi_rules/ipc_50/r", "50")
+    TestSpeed(5, "../multi_rules/ipc_100/r", "100")
+    TestSpeed(5, "../multi_rules/ipc_1K/r", "1K")
 
     #TestRealNetwork(5, "../multi_rules/acl_50/r", 50)
 
-    rules = load_CB_rules("../multi_rules/acl_1K/r0_1K")
-    for singlerule in rules:
-        for dims in range(5):
-            prefix = pc.range2prefix(singlerule[dims], DIM_POINT_BITS[dims])
-            if len(prefix) > 1:
-                print "aho"
-    print ""
+    # rules = load_CB_rules("../multi_rules/acl_1K/r0_1K")
+    # for singlerule in rules:
+    #     for dims in range(5):
+    #         prefix = pc.range2prefix(singlerule[dims], DIM_POINT_BITS[dims])
+    #         if len(prefix) > 1:
+    #             print "aho"
+    # print ""
