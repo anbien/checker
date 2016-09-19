@@ -16,7 +16,8 @@ import collections
 
 DIM_NUM = 7
 DIM_POINT_BITS = [8, 16, 16, 8, 32, 32, 16]
-# DIM_POINT_BITS = [32, 32, 16, 16, 8]
+S_DIM_NUM = 5
+S_DIM_POINT_BITS = [32, 32, 16, 16, 8]
 DIM_SIP, DIM_DIP, DIM_SPORT, DIM_DPORT, DIM_PROTO, DIM_MAX = range(6)
 UINT32_MAX, UINT16_MAX, UINT8_MAX = ((1 << i) - 1 for i in [32, 16, 8])
 DIM_POINT_MAX = [UINT8_MAX, UINT16_MAX, UINT16_MAX, UINT8_MAX, UINT32_MAX, UINT32_MAX, UINT16_MAX]
@@ -68,6 +69,20 @@ def range2prefix(rng, bits):
             work_queue.append((r, [cut, p[1]]))
 
     return prfx
+
+
+def prefix2wc(prfx_rule):
+    wc_rule = ""
+    for i in range(S_DIM_NUM):
+        dim = bin(prfx_rule[i][0][0])[3:S_DIM_POINT_BITS[i]]
+        print len(dim)
+        for j in range(S_DIM_POINT_BITS[i] - len(dim)):
+            dim = '0' + dim
+        dim = dim[:prfx_rule[i][0][1]]
+        for j in range(prfx_rule[i][0][1], S_DIM_POINT_BITS[i]):
+            dim += 'X'
+        wc_rule += dim
+    return wc_rule
 
 
 # rule format:
