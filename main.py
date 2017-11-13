@@ -485,9 +485,6 @@ def test_bench_mark(filename, testnum, pro):
     print "Average time: %f" % (sum(atomic_time) / len(atomic_time))
 
 
-
-
-
 # wcrules = wctorang.constructwcrule("./stanford/bbra_bdd_rule.txt")
 # range_rule = wctorang.gentestrangerule(wcrules)
 # for i in [50, 100, 200, 400, 600, 800, 990]:
